@@ -1,90 +1,49 @@
 import type { Request, Response } from "express";
-import prisma from "../lib/prisma.js";
 
-export const createRun = async (req: Request, res: Response) => {
+import { executeAgentRun } from "../services/run.service.js";
+
+export const createRun = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const { slug } = req.params as { slug: string };
+    const { slug } = req.params;
 
-    const agent = await prisma.agent.findUnique({
-      where: {
-        slug,
-      },
+    const execution = await executeAgentRun(
+      Array.isArray(slug) ? slug[0] : slug,
+      req.body ?? {}
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: execution,
     });
-
-    if (!agent) {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "AGENT_NOT_FOUND"
+    ) {
       return res.status(404).json({
         success: false,
         message: "Agent not found",
       });
     }
 
-    const run = await prisma.run.create({
-      data: {
-        agentId: agent.id,
-        status: "RUNNING",
-        startedAt: new Date(),
+    if (
+      error instanceof Error &&
+      error.message === "AGENT_IMPLEMENTATION_NOT_FOUND"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message: "Agent implementation is unavailable",
+      });
+    }
 
-        events: {
-          create: {
-            type: "RUN_STARTED",
-            message: `${agent.name} execution started`,
-          },
-        },
-      },
-
-      include: {
-        events: true,
-      },
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    await prisma.traceEvent.create({
-      data: {
-        runId: run.id,
-        type: "AGENT_STARTED",
-        message: `${agent.name} started processing`,
-      },
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const completedRun = await prisma.run.update({
-      where: {
-        id: run.id,
-      },
-
-      data: {
-        status: "SUCCESS",
-        completedAt: new Date(),
-
-        events: {
-          create: {
-            type: "RUN_COMPLETED",
-            message: `${agent.name} execution completed`,
-          },
-        },
-      },
-
-      include: {
-        events: {
-          orderBy: {
-            createdAt: "asc",
-          },
-        },
-      },
-    });
-
-    return res.status(201).json({
-      success: true,
-      data: completedRun,
-    });
-  } catch (error) {
-    console.error("Failed to run agent:", error);
+    console.error("Agent execution failed:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to run agent",
+      message: "Agent execution failed",
     });
   }
 };

@@ -29,5 +29,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/agents", agentRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Vigil API running on http://localhost:${PORT}`);
+  console.log(
+    `Vigil API running on http://localhost:${PORT}`
+  );
 });

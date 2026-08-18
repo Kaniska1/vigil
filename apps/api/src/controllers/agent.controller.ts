@@ -1,7 +1,11 @@
 import type { Request, Response } from "express";
+
 import prisma from "../lib/prisma.js";
 
-export const getAgents = async (_req: Request, res: Response) => {
+export const getAgents = async (
+  _req: Request,
+  res: Response
+) => {
   try {
     const agents = await prisma.agent.findMany({
       orderBy: {

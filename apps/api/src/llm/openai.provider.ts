@@ -1,0 +1,32 @@
+import "dotenv/config";
+import OpenAI from "openai";
+
+import type {
+  LLMProvider,
+  LLMRequest,
+  LLMResponse,
+} from "./llm.types.js";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export class OpenAIProvider implements LLMProvider {
+  async generate(request: LLMRequest): Promise<LLMResponse> {
+    const response = await client.responses.create({
+      model: "gpt-5-mini",
+      instructions: request.systemPrompt,
+      input: request.prompt,
+    });
+
+    return {
+      text: response.output_text,
+      model: response.model,
+      usage: {
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens,
+        totalTokens: response.usage?.total_tokens,
+      },
+    };
+  }
+}
