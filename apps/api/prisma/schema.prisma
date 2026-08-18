@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Agent {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  description String
+  version     String @default("1.0.0")
+
+  runs Run[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Run {
+  id     String    @id @default(cuid())
+  status RunStatus @default(PENDING)
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  events TraceEvent[]
+}
+
+model TraceEvent {
+  id      String         @id @default(cuid())
+  type    TraceEventType
+  message String
+
+  runId String
+  run   Run    @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum TraceEventType {
+  RUN_STARTED
+  AGENT_STARTED
+  TOOL_CALLED
+  TOOL_COMPLETED
+  LLM_STARTED
+  LLM_COMPLETED
+  RUN_COMPLETED
+  ERROR
+}
