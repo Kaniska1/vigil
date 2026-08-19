@@ -1,0 +1,8 @@
+{
+  "name": "vigil",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

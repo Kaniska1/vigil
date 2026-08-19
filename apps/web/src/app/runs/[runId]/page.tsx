@@ -1,0 +1,51 @@
+import {
+  notFound,
+  redirect,
+} from "next/navigation";
+
+import {
+  auth,
+} from "@/auth";
+
+import {
+  getRun,
+} from "@/lib/api";
+
+import {
+  RunDebugger,
+} from "@/components/runs/run-debugger";
+
+type Props = {
+  params: Promise<{
+    runId: string;
+  }>;
+};
+
+export default async function RunPage({
+  params,
+}: Props) {
+  const session =
+    await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const { runId } =
+    await params;
+
+  try {
+    const run =
+      await getRun(
+        runId
+      );
+
+    return (
+      <RunDebugger
+        run={run}
+      />
+    );
+  } catch {
+    notFound();
+  }
+}
