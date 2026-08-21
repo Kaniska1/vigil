@@ -1,7 +1,3 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:4000";
-
 export type Agent = {
   id: string;
   slug: string;
@@ -26,11 +22,7 @@ export type TraceEvent = {
   id: string;
   type: TraceEventType;
   message: string;
-
-  metadata:
-    | Record<string, unknown>
-    | null;
-
+  metadata: Record<string, unknown> | null;
   runId: string;
   createdAt: string;
 };
@@ -64,15 +56,11 @@ export type RunDetails = {
   id: string;
   status: RunStatus;
   agentId: string;
-
   result: RunResult | null;
-
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;
-
   events: TraceEvent[];
-
   agent: RunAgent;
 };
 
@@ -80,51 +68,29 @@ export type RunSummary = {
   id: string;
   status: RunStatus;
   agentId: string;
-
   result: RunResult | null;
-
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;
-
   agent: RunAgent;
-
   _count: {
     events: number;
   };
 };
 
-async function readResponse(
+async function readResponse<T>(
   response: Response,
   fallbackMessage: string
-) {
-  const body =
-    await response.json();
+): Promise<T> {
+  const body = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      body.message ??
-        fallbackMessage
+      body.message ?? fallbackMessage
     );
   }
 
   return body.data;
-}
-
-export async function getAgents(): Promise<
-  Agent[]
-> {
-  const response = await fetch(
-    `${API_URL}/api/v1/agents`,
-    {
-      cache: "no-store",
-    }
-  );
-
-  return readResponse(
-    response,
-    "Failed to fetch agents"
-  );
 }
 
 export async function runAgent(
@@ -132,38 +98,19 @@ export async function runAgent(
   input: Record<string, unknown>
 ): Promise<CreateRunResponse> {
   const response = await fetch(
-    `${API_URL}/api/v1/agents/${slug}/runs`,
+    `/api/agents/${slug}/runs`,
     {
       method: "POST",
-
       headers: {
-        "Content-Type":
-          "application/json",
+        "Content-Type": "application/json",
       },
-
       body: JSON.stringify(input),
     }
   );
 
-  return readResponse(
+  return readResponse<CreateRunResponse>(
     response,
     "Agent execution failed"
-  );
-}
-
-export async function getRuns(
-  limit = 50
-): Promise<RunSummary[]> {
-  const response = await fetch(
-    `${API_URL}/api/v1/runs?limit=${limit}`,
-    {
-      cache: "no-store",
-    }
-  );
-
-  return readResponse(
-    response,
-    "Failed to fetch runs"
   );
 }
 
@@ -171,13 +118,13 @@ export async function getRun(
   runId: string
 ): Promise<RunDetails> {
   const response = await fetch(
-    `${API_URL}/api/v1/runs/${runId}`,
+    `/api/runs/${runId}`,
     {
       cache: "no-store",
     }
   );
 
-  return readResponse(
+  return readResponse<RunDetails>(
     response,
     "Failed to fetch run"
   );
@@ -186,5 +133,5 @@ export async function getRun(
 export function getRunStreamUrl(
   runId: string
 ): string {
-  return `${API_URL}/api/v1/runs/${runId}/stream`;
+  return `/api/runs/${runId}/stream`;
 }

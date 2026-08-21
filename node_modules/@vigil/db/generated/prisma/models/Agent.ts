@@ -326,6 +326,11 @@ export type AgentUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type AgentScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput
+  isNot?: Prisma.AgentWhereInput
+}
+
 export type AgentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   slug?: Prisma.SortOrder
@@ -354,11 +359,6 @@ export type AgentMinOrderByAggregateInput = {
   version?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-}
-
-export type AgentScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput
-  isNot?: Prisma.AgentWhereInput
 }
 
 export type AgentCreateNestedOneWithoutRunsInput = {

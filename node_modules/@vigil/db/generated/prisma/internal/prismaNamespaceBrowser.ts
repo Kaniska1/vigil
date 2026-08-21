@@ -52,11 +52,11 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  Run: 'Run',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Agent: 'Agent',
-  Run: 'Run',
   TraceEvent: 'TraceEvent'
 } as const
 
@@ -87,6 +87,20 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const RunScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  agentId: 'agentId',
+  userId: 'userId',
+  result: 'result',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
 export const AccountScalarFieldEnum = {
@@ -137,19 +151,6 @@ export const AgentScalarFieldEnum = {
 } as const
 
 export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
-
-
-export const RunScalarFieldEnum = {
-  id: 'id',
-  status: 'status',
-  agentId: 'agentId',
-  result: 'result',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt',
-  createdAt: 'createdAt'
-} as const
-
-export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
 export const TraceEventScalarFieldEnum = {

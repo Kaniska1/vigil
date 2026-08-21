@@ -1,12 +1,29 @@
 import { Router } from "express";
 
-import { getAgents } from "../controllers/agent.controller.js";
-import { createRun } from "../controllers/run.controller.js";
+import {
+  getAgents,
+} from "../controllers/agent.controller.js";
 
-const router = Router();
+import {
+  createRun,
+} from "../controllers/run.controller.js";
 
-router.get("/", getAgents);
+import {
+  requireAuth,
+} from "../middleware/auth.middleware.js";
 
-router.post("/:slug/runs", createRun);
+const router =
+  Router();
+
+router.get(
+  "/",
+  getAgents
+);
+
+router.post(
+  "/:slug/runs",
+  requireAuth,
+  createRun
+);
 
 export default router;

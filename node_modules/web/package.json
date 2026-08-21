@@ -15,6 +15,7 @@
     "@vigil/db": "^0.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jose": "^6.2.9",
     "lucide-react": "^1.32.0",
     "next": "16.3.1",
     "next-auth": "^5.0.0-beta.32",

@@ -1,9 +1,12 @@
 import type {
-  Request,
   Response,
 } from "express";
 
 import prisma from "../lib/prisma.js";
+
+import type {
+  AuthenticatedRequest,
+} from "../middleware/auth.middleware.js";
 
 import {
   createAgentRun,
@@ -11,7 +14,7 @@ import {
 } from "../services/run.service.js";
 
 export const createRun = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
@@ -19,8 +22,21 @@ export const createRun = async (
       req.params.slug
     );
 
+    const userId =
+      req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
     const { run } =
-      await createAgentRun(slug);
+      await createAgentRun(
+        slug,
+        userId
+      );
 
     void executeAgentRun(
       run.id,
@@ -79,16 +95,29 @@ export const createRun = async (
 };
 
 export const listRuns = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const requestedLimit = Number(
-      req.query.limit ?? 50
-    );
+    const userId =
+      req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const requestedLimit =
+      Number(
+        req.query.limit ?? 50
+      );
 
     const limit =
-      Number.isInteger(requestedLimit) &&
+      Number.isInteger(
+        requestedLimit
+      ) &&
       requestedLimit > 0
         ? Math.min(
             requestedLimit,
@@ -98,6 +127,10 @@ export const listRuns = async (
 
     const runs =
       await prisma.run.findMany({
+        where: {
+          userId,
+        },
+
         take: limit,
 
         orderBy: {
@@ -133,24 +166,37 @@ export const listRuns = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to list runs",
+      message:
+        "Failed to list runs",
     });
   }
 };
 
 export const getRun = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const runId = String(
-      req.params.runId
-    );
+    const runId =
+      String(
+        req.params.runId
+      );
+
+    const userId =
+      req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
     const run =
-      await prisma.run.findUnique({
+      await prisma.run.findFirst({
         where: {
           id: runId,
+          userId,
         },
 
         include: {
@@ -189,7 +235,8 @@ export const getRun = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch run",
+      message:
+        "Failed to fetch run",
     });
   }
 };

@@ -1,13 +1,13 @@
 import prisma from "../lib/prisma.js";
 
 import { getAgentImplementation } from "../agents/agent.registry.js";
-
 import type { AgentInput } from "../agents/agent.types.js";
 
 import { createExecutionContext } from "../runtime/create-execution-context.js";
 
 export async function createAgentRun(
-  slug: string
+  slug: string,
+  userId: string
 ) {
   const agentRecord =
     await prisma.agent.findUnique({
@@ -32,6 +32,7 @@ export async function createAgentRun(
   const run = await prisma.run.create({
     data: {
       agentId: agentRecord.id,
+      userId,
       status: "PENDING",
     },
   });
@@ -97,13 +98,6 @@ export async function executeAgentRun(
         context
       );
 
-    /*
-     * Persist the result BEFORE publishing RUN_COMPLETED.
-     *
-     * This prevents the frontend from receiving RUN_COMPLETED,
-     * immediately fetching the run, and finding that the database
-     * hasn't been updated yet.
-     */
     await prisma.run.update({
       where: {
         id: runId,
@@ -112,12 +106,6 @@ export async function executeAgentRun(
       data: {
         status: "SUCCESS",
         completedAt: new Date(),
-
-        /*
-         * AgentExecutionResult is JSON-compatible in our current
-         * agents. JSON.parse/stringify also removes anything that
-         * cannot be persisted as JSON.
-         */
         result: JSON.parse(
           JSON.stringify(result)
         ),

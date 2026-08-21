@@ -8,8 +8,8 @@ import {
 } from "@/auth";
 
 import {
-  getRun,
-} from "@/lib/api";
+  getRunServer,
+} from "@/lib/server-api";
 
 import {
   RunDebugger,
@@ -36,7 +36,7 @@ export default async function RunPage({
 
   try {
     const run =
-      await getRun(
+      await getRunServer(
         runId
       );
 

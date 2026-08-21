@@ -9,7 +9,16 @@ import {
   streamRun,
 } from "../controllers/run-stream.controller.js";
 
-const router = Router();
+import {
+  requireAuth,
+} from "../middleware/auth.middleware.js";
+
+const router =
+  Router();
+
+router.use(
+  requireAuth
+);
 
 router.get(
   "/",

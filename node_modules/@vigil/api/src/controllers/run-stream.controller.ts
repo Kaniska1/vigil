@@ -1,26 +1,44 @@
 import type {
-  Request,
   Response,
 } from "express";
 
 import prisma from "../lib/prisma.js";
+
+import type {
+  AuthenticatedRequest,
+} from "../middleware/auth.middleware.js";
 
 import {
   subscribeToRun,
 } from "../runtime/run-event-bus.js";
 
 export async function streamRun(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   const runId = String(
     req.params.runId
   );
 
+  const userId =
+    req.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  /*
+   * Ownership is checked directly in the database query.
+   * If the run belongs to somebody else, treat it as not found.
+   */
   const run =
-    await prisma.run.findUnique({
+    await prisma.run.findFirst({
       where: {
         id: runId,
+        userId,
       },
     });
 
@@ -64,10 +82,7 @@ export async function streamRun(
   };
 
   /*
-   * First replay everything that already happened.
-   *
-   * This prevents the browser from missing events that happened
-   * between POST /runs and opening the EventSource connection.
+   * Replay existing persisted events first.
    */
   const existingEvents =
     await prisma.traceEvent.findMany({
@@ -83,17 +98,21 @@ export async function streamRun(
   for (
     const event of existingEvents
   ) {
-    send("trace", event);
+    send(
+      "trace",
+      event
+    );
   }
 
   /*
-   * If the run already finished before the SSE connection opened,
-   * immediately tell the frontend that it is done.
+   * If the run completed before this SSE connection opened,
+   * immediately send a done event.
    */
   const latestRun =
-    await prisma.run.findUnique({
+    await prisma.run.findFirst({
       where: {
         id: runId,
+        userId,
       },
 
       select: {
@@ -104,12 +123,17 @@ export async function streamRun(
   if (
     latestRun?.status ===
       "SUCCESS" ||
-    latestRun?.status === "FAILED"
+    latestRun?.status ===
+      "FAILED"
   ) {
-    send("done", {
-      runId,
-      status: latestRun.status,
-    });
+    send(
+      "done",
+      {
+        runId,
+        status:
+          latestRun.status,
+      }
+    );
 
     return res.end();
   }
@@ -118,16 +142,23 @@ export async function streamRun(
     subscribeToRun(
       runId,
       (event) => {
-        send("trace", event);
+        send(
+          "trace",
+          event
+        );
 
         if (
           event.type ===
             "RUN_COMPLETED" ||
-          event.type === "ERROR"
+          event.type ===
+            "ERROR"
         ) {
-          send("done", {
-            runId,
-          });
+          send(
+            "done",
+            {
+              runId,
+            }
+          );
 
           unsubscribe();
 
@@ -136,7 +167,10 @@ export async function streamRun(
       }
     );
 
-  req.on("close", () => {
-    unsubscribe();
-  });
+  req.on(
+    "close",
+    () => {
+      unsubscribe();
+    }
+  );
 }

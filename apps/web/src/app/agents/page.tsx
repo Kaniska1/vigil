@@ -7,8 +7,8 @@ import {
 } from "@/auth";
 
 import {
-  getAgents,
-} from "@/lib/api";
+  getAgentsServer,
+} from "@/lib/server-api";
 
 import {
   AgentWorkspace,
@@ -23,7 +23,7 @@ export default async function AgentsPage() {
   }
 
   const agents =
-    await getAgents();
+    await getAgentsServer();
 
   return (
     <AgentWorkspace

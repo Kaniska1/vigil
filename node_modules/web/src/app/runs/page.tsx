@@ -7,8 +7,8 @@ import {
 } from "@/auth";
 
 import {
-  getRuns,
-} from "@/lib/api";
+  getRunsServer,
+} from "@/lib/server-api";
 
 import {
   RunList,
@@ -23,7 +23,7 @@ export default async function RunsPage() {
   }
 
   const runs =
-    await getRuns();
+    await getRunsServer();
 
   return (
     <RunList runs={runs} />

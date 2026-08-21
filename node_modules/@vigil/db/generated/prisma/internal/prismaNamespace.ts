@@ -398,11 +398,11 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  Run: 'Run',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Agent: 'Agent',
-  Run: 'Run',
   TraceEvent: 'TraceEvent'
 } as const
 
@@ -419,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "agent" | "run" | "traceEvent"
+    modelProps: "user" | "run" | "account" | "session" | "verificationToken" | "agent" | "traceEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -494,6 +494,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    Run: {
+      payload: Prisma.$RunPayload<ExtArgs>
+      fields: Prisma.RunFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RunFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RunFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
+        }
+        findFirst: {
+          args: Prisma.RunFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RunFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
+        }
+        findMany: {
+          args: Prisma.RunFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>[]
+        }
+        create: {
+          args: Prisma.RunCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
+        }
+        createMany: {
+          args: Prisma.RunCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RunCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>[]
+        }
+        delete: {
+          args: Prisma.RunDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
+        }
+        update: {
+          args: Prisma.RunUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
+        }
+        deleteMany: {
+          args: Prisma.RunDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RunUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RunUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>[]
+        }
+        upsert: {
+          args: Prisma.RunUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
+        }
+        aggregate: {
+          args: Prisma.RunAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRun>
+        }
+        groupBy: {
+          args: Prisma.RunGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RunGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RunCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RunCountAggregateOutputType> | number
         }
       }
     }
@@ -793,80 +867,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Run: {
-      payload: Prisma.$RunPayload<ExtArgs>
-      fields: Prisma.RunFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.RunFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.RunFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
-        }
-        findFirst: {
-          args: Prisma.RunFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.RunFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
-        }
-        findMany: {
-          args: Prisma.RunFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>[]
-        }
-        create: {
-          args: Prisma.RunCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
-        }
-        createMany: {
-          args: Prisma.RunCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.RunCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>[]
-        }
-        delete: {
-          args: Prisma.RunDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
-        }
-        update: {
-          args: Prisma.RunUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
-        }
-        deleteMany: {
-          args: Prisma.RunDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.RunUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.RunUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>[]
-        }
-        upsert: {
-          args: Prisma.RunUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RunPayload>
-        }
-        aggregate: {
-          args: Prisma.RunAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateRun>
-        }
-        groupBy: {
-          args: Prisma.RunGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.RunGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.RunCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.RunCountAggregateOutputType> | number
-        }
-      }
-    }
     TraceEvent: {
       payload: Prisma.$TraceEventPayload<ExtArgs>
       fields: Prisma.TraceEventFieldRefs
@@ -993,6 +993,20 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const RunScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  agentId: 'agentId',
+  userId: 'userId',
+  result: 'result',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
+
+
 export const AccountScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -1041,19 +1055,6 @@ export const AgentScalarFieldEnum = {
 } as const
 
 export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
-
-
-export const RunScalarFieldEnum = {
-  id: 'id',
-  status: 'status',
-  agentId: 'agentId',
-  result: 'result',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt',
-  createdAt: 'createdAt'
-} as const
-
-export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
 export const TraceEventScalarFieldEnum = {
@@ -1144,20 +1145,6 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
- * Reference to a field of type 'Int'
- */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-/**
- * Reference to a field of type 'Int[]'
- */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-/**
  * Reference to a field of type 'RunStatus'
  */
 export type EnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RunStatus'>
@@ -1182,6 +1169,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -1364,11 +1365,11 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  run?: Prisma.RunOmit
   account?: Prisma.AccountOmit
   session?: Prisma.SessionOmit
   verificationToken?: Prisma.VerificationTokenOmit
   agent?: Prisma.AgentOmit
-  run?: Prisma.RunOmit
   traceEvent?: Prisma.TraceEventOmit
 }
 
