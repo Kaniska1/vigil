@@ -204,6 +204,7 @@ export type RunWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Run"> | Date | string
   agent?: Prisma.XOR<Prisma.AgentScalarRelationFilter, Prisma.AgentWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  orchestrationStep?: Prisma.XOR<Prisma.OrchestrationStepNullableScalarRelationFilter, Prisma.OrchestrationStepWhereInput> | null
   events?: Prisma.TraceEventListRelationFilter
 }
 
@@ -218,6 +219,7 @@ export type RunOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   agent?: Prisma.AgentOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
+  orchestrationStep?: Prisma.OrchestrationStepOrderByWithRelationInput
   events?: Prisma.TraceEventOrderByRelationAggregateInput
 }
 
@@ -235,6 +237,7 @@ export type RunWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Run"> | Date | string
   agent?: Prisma.XOR<Prisma.AgentScalarRelationFilter, Prisma.AgentWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  orchestrationStep?: Prisma.XOR<Prisma.OrchestrationStepNullableScalarRelationFilter, Prisma.OrchestrationStepWhereInput> | null
   events?: Prisma.TraceEventListRelationFilter
 }, "id">
 
@@ -275,6 +278,7 @@ export type RunCreateInput = {
   createdAt?: Date | string
   agent: Prisma.AgentCreateNestedOneWithoutRunsInput
   user: Prisma.UserCreateNestedOneWithoutRunsInput
+  orchestrationStep?: Prisma.OrchestrationStepCreateNestedOneWithoutRunInput
   events?: Prisma.TraceEventCreateNestedManyWithoutRunInput
 }
 
@@ -287,6 +291,7 @@ export type RunUncheckedCreateInput = {
   startedAt?: Date | string | null
   completedAt?: Date | string | null
   createdAt?: Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedCreateNestedOneWithoutRunInput
   events?: Prisma.TraceEventUncheckedCreateNestedManyWithoutRunInput
 }
 
@@ -299,6 +304,7 @@ export type RunUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agent?: Prisma.AgentUpdateOneRequiredWithoutRunsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutRunsNestedInput
+  orchestrationStep?: Prisma.OrchestrationStepUpdateOneWithoutRunNestedInput
   events?: Prisma.TraceEventUpdateManyWithoutRunNestedInput
 }
 
@@ -311,6 +317,7 @@ export type RunUncheckedUpdateInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedUpdateOneWithoutRunNestedInput
   events?: Prisma.TraceEventUncheckedUpdateManyWithoutRunNestedInput
 }
 
@@ -391,6 +398,11 @@ export type RunScalarRelationFilter = {
   isNot?: Prisma.RunWhereInput
 }
 
+export type RunNullableScalarRelationFilter = {
+  is?: Prisma.RunWhereInput | null
+  isNot?: Prisma.RunWhereInput | null
+}
+
 export type RunCreateNestedManyWithoutUserInput = {
   create?: Prisma.XOR<Prisma.RunCreateWithoutUserInput, Prisma.RunUncheckedCreateWithoutUserInput> | Prisma.RunCreateWithoutUserInput[] | Prisma.RunUncheckedCreateWithoutUserInput[]
   connectOrCreate?: Prisma.RunCreateOrConnectWithoutUserInput | Prisma.RunCreateOrConnectWithoutUserInput[]
@@ -431,10 +443,6 @@ export type RunUncheckedUpdateManyWithoutUserNestedInput = {
   update?: Prisma.RunUpdateWithWhereUniqueWithoutUserInput | Prisma.RunUpdateWithWhereUniqueWithoutUserInput[]
   updateMany?: Prisma.RunUpdateManyWithWhereWithoutUserInput | Prisma.RunUpdateManyWithWhereWithoutUserInput[]
   deleteMany?: Prisma.RunScalarWhereInput | Prisma.RunScalarWhereInput[]
-}
-
-export type EnumRunStatusFieldUpdateOperationsInput = {
-  set?: $Enums.RunStatus
 }
 
 export type RunCreateNestedManyWithoutAgentInput = {
@@ -479,6 +487,10 @@ export type RunUncheckedUpdateManyWithoutAgentNestedInput = {
   deleteMany?: Prisma.RunScalarWhereInput | Prisma.RunScalarWhereInput[]
 }
 
+export type EnumRunStatusFieldUpdateOperationsInput = {
+  set?: $Enums.RunStatus
+}
+
 export type RunCreateNestedOneWithoutEventsInput = {
   create?: Prisma.XOR<Prisma.RunCreateWithoutEventsInput, Prisma.RunUncheckedCreateWithoutEventsInput>
   connectOrCreate?: Prisma.RunCreateOrConnectWithoutEventsInput
@@ -493,6 +505,22 @@ export type RunUpdateOneRequiredWithoutEventsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RunUpdateToOneWithWhereWithoutEventsInput, Prisma.RunUpdateWithoutEventsInput>, Prisma.RunUncheckedUpdateWithoutEventsInput>
 }
 
+export type RunCreateNestedOneWithoutOrchestrationStepInput = {
+  create?: Prisma.XOR<Prisma.RunCreateWithoutOrchestrationStepInput, Prisma.RunUncheckedCreateWithoutOrchestrationStepInput>
+  connectOrCreate?: Prisma.RunCreateOrConnectWithoutOrchestrationStepInput
+  connect?: Prisma.RunWhereUniqueInput
+}
+
+export type RunUpdateOneWithoutOrchestrationStepNestedInput = {
+  create?: Prisma.XOR<Prisma.RunCreateWithoutOrchestrationStepInput, Prisma.RunUncheckedCreateWithoutOrchestrationStepInput>
+  connectOrCreate?: Prisma.RunCreateOrConnectWithoutOrchestrationStepInput
+  upsert?: Prisma.RunUpsertWithoutOrchestrationStepInput
+  disconnect?: Prisma.RunWhereInput | boolean
+  delete?: Prisma.RunWhereInput | boolean
+  connect?: Prisma.RunWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RunUpdateToOneWithWhereWithoutOrchestrationStepInput, Prisma.RunUpdateWithoutOrchestrationStepInput>, Prisma.RunUncheckedUpdateWithoutOrchestrationStepInput>
+}
+
 export type RunCreateWithoutUserInput = {
   id?: string
   status?: $Enums.RunStatus
@@ -501,6 +529,7 @@ export type RunCreateWithoutUserInput = {
   completedAt?: Date | string | null
   createdAt?: Date | string
   agent: Prisma.AgentCreateNestedOneWithoutRunsInput
+  orchestrationStep?: Prisma.OrchestrationStepCreateNestedOneWithoutRunInput
   events?: Prisma.TraceEventCreateNestedManyWithoutRunInput
 }
 
@@ -512,6 +541,7 @@ export type RunUncheckedCreateWithoutUserInput = {
   startedAt?: Date | string | null
   completedAt?: Date | string | null
   createdAt?: Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedCreateNestedOneWithoutRunInput
   events?: Prisma.TraceEventUncheckedCreateNestedManyWithoutRunInput
 }
 
@@ -563,6 +593,7 @@ export type RunCreateWithoutAgentInput = {
   completedAt?: Date | string | null
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutRunsInput
+  orchestrationStep?: Prisma.OrchestrationStepCreateNestedOneWithoutRunInput
   events?: Prisma.TraceEventCreateNestedManyWithoutRunInput
 }
 
@@ -574,6 +605,7 @@ export type RunUncheckedCreateWithoutAgentInput = {
   startedAt?: Date | string | null
   completedAt?: Date | string | null
   createdAt?: Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedCreateNestedOneWithoutRunInput
   events?: Prisma.TraceEventUncheckedCreateNestedManyWithoutRunInput
 }
 
@@ -612,6 +644,7 @@ export type RunCreateWithoutEventsInput = {
   createdAt?: Date | string
   agent: Prisma.AgentCreateNestedOneWithoutRunsInput
   user: Prisma.UserCreateNestedOneWithoutRunsInput
+  orchestrationStep?: Prisma.OrchestrationStepCreateNestedOneWithoutRunInput
 }
 
 export type RunUncheckedCreateWithoutEventsInput = {
@@ -623,6 +656,7 @@ export type RunUncheckedCreateWithoutEventsInput = {
   startedAt?: Date | string | null
   completedAt?: Date | string | null
   createdAt?: Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedCreateNestedOneWithoutRunInput
 }
 
 export type RunCreateOrConnectWithoutEventsInput = {
@@ -650,6 +684,7 @@ export type RunUpdateWithoutEventsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agent?: Prisma.AgentUpdateOneRequiredWithoutRunsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutRunsNestedInput
+  orchestrationStep?: Prisma.OrchestrationStepUpdateOneWithoutRunNestedInput
 }
 
 export type RunUncheckedUpdateWithoutEventsInput = {
@@ -661,6 +696,71 @@ export type RunUncheckedUpdateWithoutEventsInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedUpdateOneWithoutRunNestedInput
+}
+
+export type RunCreateWithoutOrchestrationStepInput = {
+  id?: string
+  status?: $Enums.RunStatus
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  agent: Prisma.AgentCreateNestedOneWithoutRunsInput
+  user: Prisma.UserCreateNestedOneWithoutRunsInput
+  events?: Prisma.TraceEventCreateNestedManyWithoutRunInput
+}
+
+export type RunUncheckedCreateWithoutOrchestrationStepInput = {
+  id?: string
+  status?: $Enums.RunStatus
+  agentId: string
+  userId: string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  events?: Prisma.TraceEventUncheckedCreateNestedManyWithoutRunInput
+}
+
+export type RunCreateOrConnectWithoutOrchestrationStepInput = {
+  where: Prisma.RunWhereUniqueInput
+  create: Prisma.XOR<Prisma.RunCreateWithoutOrchestrationStepInput, Prisma.RunUncheckedCreateWithoutOrchestrationStepInput>
+}
+
+export type RunUpsertWithoutOrchestrationStepInput = {
+  update: Prisma.XOR<Prisma.RunUpdateWithoutOrchestrationStepInput, Prisma.RunUncheckedUpdateWithoutOrchestrationStepInput>
+  create: Prisma.XOR<Prisma.RunCreateWithoutOrchestrationStepInput, Prisma.RunUncheckedCreateWithoutOrchestrationStepInput>
+  where?: Prisma.RunWhereInput
+}
+
+export type RunUpdateToOneWithWhereWithoutOrchestrationStepInput = {
+  where?: Prisma.RunWhereInput
+  data: Prisma.XOR<Prisma.RunUpdateWithoutOrchestrationStepInput, Prisma.RunUncheckedUpdateWithoutOrchestrationStepInput>
+}
+
+export type RunUpdateWithoutOrchestrationStepInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agent?: Prisma.AgentUpdateOneRequiredWithoutRunsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutRunsNestedInput
+  events?: Prisma.TraceEventUpdateManyWithoutRunNestedInput
+}
+
+export type RunUncheckedUpdateWithoutOrchestrationStepInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+  agentId?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  events?: Prisma.TraceEventUncheckedUpdateManyWithoutRunNestedInput
 }
 
 export type RunCreateManyUserInput = {
@@ -681,6 +781,7 @@ export type RunUpdateWithoutUserInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agent?: Prisma.AgentUpdateOneRequiredWithoutRunsNestedInput
+  orchestrationStep?: Prisma.OrchestrationStepUpdateOneWithoutRunNestedInput
   events?: Prisma.TraceEventUpdateManyWithoutRunNestedInput
 }
 
@@ -692,6 +793,7 @@ export type RunUncheckedUpdateWithoutUserInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedUpdateOneWithoutRunNestedInput
   events?: Prisma.TraceEventUncheckedUpdateManyWithoutRunNestedInput
 }
 
@@ -723,6 +825,7 @@ export type RunUpdateWithoutAgentInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutRunsNestedInput
+  orchestrationStep?: Prisma.OrchestrationStepUpdateOneWithoutRunNestedInput
   events?: Prisma.TraceEventUpdateManyWithoutRunNestedInput
 }
 
@@ -734,6 +837,7 @@ export type RunUncheckedUpdateWithoutAgentInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orchestrationStep?: Prisma.OrchestrationStepUncheckedUpdateOneWithoutRunNestedInput
   events?: Prisma.TraceEventUncheckedUpdateManyWithoutRunNestedInput
 }
 
@@ -789,6 +893,7 @@ export type RunSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   createdAt?: boolean
   agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  orchestrationStep?: boolean | Prisma.Run$orchestrationStepArgs<ExtArgs>
   events?: boolean | Prisma.Run$eventsArgs<ExtArgs>
   _count?: boolean | Prisma.RunCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["run"]>
@@ -834,6 +939,7 @@ export type RunOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
 export type RunInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  orchestrationStep?: boolean | Prisma.Run$orchestrationStepArgs<ExtArgs>
   events?: boolean | Prisma.Run$eventsArgs<ExtArgs>
   _count?: boolean | Prisma.RunCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -851,6 +957,7 @@ export type $RunPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   objects: {
     agent: Prisma.$AgentPayload<ExtArgs>
     user: Prisma.$UserPayload<ExtArgs>
+    orchestrationStep: Prisma.$OrchestrationStepPayload<ExtArgs> | null
     events: Prisma.$TraceEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1258,6 +1365,7 @@ export interface Prisma__RunClient<T, Null = never, ExtArgs extends runtime.Type
   readonly [Symbol.toStringTag]: "PrismaPromise"
   agent<T extends Prisma.AgentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentClient<runtime.Types.Result.GetResult<Prisma.$AgentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  orchestrationStep<T extends Prisma.Run$orchestrationStepArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Run$orchestrationStepArgs<ExtArgs>>): Prisma.Prisma__OrchestrationStepClient<runtime.Types.Result.GetResult<Prisma.$OrchestrationStepPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   events<T extends Prisma.Run$eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Run$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TraceEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1694,6 +1802,25 @@ export type RunDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Limit how many Runs to delete.
    */
   limit?: number
+}
+
+/**
+ * Run.orchestrationStep
+ */
+export type Run$orchestrationStepArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OrchestrationStep
+   */
+  select?: Prisma.OrchestrationStepSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OrchestrationStep
+   */
+  omit?: Prisma.OrchestrationStepOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrchestrationStepInclude<ExtArgs> | null
+  where?: Prisma.OrchestrationStepWhereInput
 }
 
 /**

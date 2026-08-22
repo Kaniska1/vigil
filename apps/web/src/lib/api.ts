@@ -4,6 +4,14 @@ export type Agent = {
   name: string;
   description: string;
   version: string;
+
+  capabilities?: string[];
+  tools?: string[];
+  permissions?: string[];
+
+  category?: string | null;
+  isActive?: boolean;
+
   createdAt: string;
   updatedAt: string;
 };
@@ -22,7 +30,9 @@ export type TraceEvent = {
   id: string;
   type: TraceEventType;
   message: string;
+
   metadata: Record<string, unknown> | null;
+
   runId: string;
   createdAt: string;
 };
@@ -54,75 +64,337 @@ export type RunAgent = {
 
 export type RunDetails = {
   id: string;
+
   status: RunStatus;
+
   agentId: string;
+
   result: RunResult | null;
+
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;
+
   events: TraceEvent[];
+
   agent: RunAgent;
 };
 
 export type RunSummary = {
   id: string;
+
   status: RunStatus;
+
   agentId: string;
+
   result: RunResult | null;
+
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;
+
   agent: RunAgent;
+
   _count: {
     events: number;
   };
 };
 
+/*
+ * ==================================================
+ * ORCHESTRATOR PLANNING TYPES
+ * ==================================================
+ */
+
+export type OrchestratorCandidateAgent = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string;
+
+  capabilities: string[];
+};
+
+export type OrchestratorPlanStep = {
+  capability: string;
+  reason: string;
+  required: boolean;
+
+  candidates: OrchestratorCandidateAgent[];
+};
+
+export type OrchestratorExecutionStep = {
+  agent: OrchestratorCandidateAgent;
+
+  satisfies: string[];
+
+  requiredCapabilities: string[];
+
+  optionalCapabilities: string[];
+};
+
+export type OrchestratorPlan = {
+  goal: string;
+
+  summary: string;
+
+  /*
+   * Capability-level plan generated
+   * by the Vigil planner.
+   */
+  steps: OrchestratorPlanStep[];
+
+  /*
+   * Concrete registered agents selected
+   * after capability consolidation.
+   */
+  executionSteps: OrchestratorExecutionStep[];
+
+  executable: boolean;
+
+  /*
+   * Missing required capabilities.
+   */
+  unresolvedCapabilities: string[];
+
+  /*
+   * Missing optional capabilities.
+   */
+  unresolvedOptionalCapabilities: string[];
+};
+
+export type CreateOrchestratorPlanInput = {
+  goal: string;
+
+  context?: Record<string, unknown>;
+};
+
+/*
+ * ==================================================
+ * ORCHESTRATION RUNTIME TYPES
+ * ==================================================
+ */
+
+export type OrchestrationStatus =
+  | "PLANNING"
+  | "BLOCKED"
+  | "READY"
+  | "RUNNING"
+  | "SUCCESS"
+  | "FAILED"
+  | "CANCELLED";
+
+export type OrchestrationStepStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "SUCCESS"
+  | "FAILED"
+  | "SKIPPED";
+
+export type CreateOrchestrationResponse = {
+  orchestrationId: string;
+
+  status: OrchestrationStatus;
+
+  plan: OrchestratorPlan;
+};
+
+export type ExecuteOrchestrationResponse = {
+  orchestrationId: string;
+
+  status: "RUNNING";
+
+  runs: {
+    stepId: string;
+    runId: string;
+  }[];
+};
+
+export type OrchestrationStepAgent = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string;
+};
+
+export type OrchestrationStepRun = {
+  id: string;
+
+  status: RunStatus;
+
+  createdAt: string;
+
+  startedAt: string | null;
+
+  completedAt: string | null;
+};
+
+export type OrchestrationStepDetails = {
+  id: string;
+
+  orchestrationId: string;
+
+  position: number;
+
+  status: OrchestrationStepStatus;
+
+  satisfies: string[];
+
+  requiredCapabilities: string[];
+
+  optionalCapabilities: string[];
+
+  startedAt: string | null;
+
+  completedAt: string | null;
+
+  agent: OrchestrationStepAgent | null;
+
+  run: OrchestrationStepRun | null;
+};
+
+export type OrchestrationDetails = {
+  id: string;
+
+  goal: string;
+
+  summary:
+    | string
+    | null;
+
+  status:
+    OrchestrationStatus;
+
+  unresolvedCapabilities:
+    string[];
+
+  createdAt:
+    string;
+
+  startedAt:
+    | string
+    | null;
+
+  completedAt:
+    | string
+    | null;
+
+  steps:
+    OrchestrationStepDetails[];
+
+  events:
+    OrchestrationEvent[];
+};
+
+/*
+ * ==================================================
+ * RESPONSE PARSING
+ * ==================================================
+ */
+
 async function readResponse<T>(
   response: Response,
   fallbackMessage: string
 ): Promise<T> {
-  const body = await response.json();
+  const contentType =
+    response.headers.get(
+      "content-type"
+    );
 
-  if (!response.ok) {
+  /*
+   * Gives us useful errors when Next or
+   * Express accidentally returns HTML
+   * instead of JSON.
+   */
+  if (
+    !contentType?.includes(
+      "application/json"
+    )
+  ) {
+    const text =
+      await response.text();
+
+    console.error(
+      "Expected JSON response but received:",
+      text
+    );
+
     throw new Error(
-      body.message ?? fallbackMessage
+      `${fallbackMessage} (${response.status} ${response.statusText})`
     );
   }
 
-  return body.data;
+  const body =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      body.message ??
+        fallbackMessage
+    );
+  }
+
+  return body.data as T;
 }
+
+/*
+ * ==================================================
+ * AGENT EXECUTION
+ * ==================================================
+ */
 
 export async function runAgent(
   slug: string,
-  input: Record<string, unknown>
+  input: Record<
+    string,
+    unknown
+  >
 ): Promise<CreateRunResponse> {
-  const response = await fetch(
-    `/api/agents/${slug}/runs`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(input),
-    }
-  );
+  const response =
+    await fetch(
+      `/api/agents/${encodeURIComponent(
+        slug
+      )}/runs`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(
+            input
+          ),
+      }
+    );
 
   return readResponse<CreateRunResponse>(
     response,
-    "Agent execution failed"
+    "Failed to create agent run"
   );
 }
+
+/*
+ * ==================================================
+ * INDIVIDUAL RUN
+ * ==================================================
+ */
 
 export async function getRun(
   runId: string
 ): Promise<RunDetails> {
-  const response = await fetch(
-    `/api/runs/${runId}`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `/api/runs/${encodeURIComponent(
+        runId
+      )}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
 
   return readResponse<RunDetails>(
     response,
@@ -133,5 +405,129 @@ export async function getRun(
 export function getRunStreamUrl(
   runId: string
 ): string {
-  return `/api/runs/${runId}/stream`;
+  return `/api/runs/${encodeURIComponent(
+    runId
+  )}/stream`;
+}
+
+/*
+ * ==================================================
+ * ORCHESTRATOR PLANNING
+ * ==================================================
+ */
+
+export async function createOrchestratorPlan(
+  input: CreateOrchestratorPlanInput
+): Promise<CreateOrchestrationResponse> {
+  const response =
+    await fetch(
+      "/api/orchestrator/plan",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(
+            input
+          ),
+      }
+    );
+
+  return readResponse<CreateOrchestrationResponse>(
+    response,
+    "Failed to create execution plan"
+  );
+}
+
+/*
+ * ==================================================
+ * ORCHESTRATION EXECUTION
+ * ==================================================
+ */
+
+export async function executeOrchestration(
+  orchestrationId: string
+): Promise<ExecuteOrchestrationResponse> {
+  const response =
+    await fetch(
+      `/api/orchestrator/${encodeURIComponent(
+        orchestrationId
+      )}/execute`,
+      {
+        method:
+          "POST",
+      }
+    );
+
+  return readResponse<ExecuteOrchestrationResponse>(
+    response,
+    "Failed to execute orchestration"
+  );
+}
+
+/*
+ * ==================================================
+ * ORCHESTRATION STATE
+ * ==================================================
+ */
+
+export async function getOrchestration(
+  orchestrationId: string
+): Promise<OrchestrationDetails> {
+  const response =
+    await fetch(
+      `/api/orchestrator/${encodeURIComponent(
+        orchestrationId
+      )}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  return readResponse<OrchestrationDetails>(
+    response,
+    "Failed to fetch orchestration"
+  );
+}
+
+export type OrchestrationEventType =
+  | "PLAN_CREATED"
+  | "AGENT_SELECTED"
+  | "ORCHESTRATION_STARTED"
+  | "STEP_STARTED"
+  | "STEP_COMPLETED"
+  | "STEP_FAILED"
+  | "ORCHESTRATION_COMPLETED"
+  | "ORCHESTRATION_FAILED";
+
+export type OrchestrationEvent = {
+  id: string;
+
+  type:
+    OrchestrationEventType;
+
+  message: string;
+
+  metadata:
+    | Record<string, unknown>
+    | null;
+
+  orchestrationId:
+    string;
+
+  createdAt:
+    string;
+};
+
+export function getOrchestrationStreamUrl(
+  orchestrationId: string
+): string {
+  return `/api/orchestrator/${encodeURIComponent(
+    orchestrationId
+  )}/stream`;
 }

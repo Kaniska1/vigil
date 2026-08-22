@@ -17,31 +17,13 @@ model User {
   emailVerified DateTime?
   image         String?
 
-  accounts Account[]
-  sessions Session[]
-  runs     Run[]
+  accounts       Account[]
+  sessions       Session[]
+  runs           Run[]
+  orchestrations OrchestrationRun[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model Run {
-  id     String    @id @default(cuid())
-  status RunStatus @default(PENDING)
-
-  agentId String
-  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  result Json?
-
-  startedAt   DateTime?
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-
-  events TraceEvent[]
 }
 
 model Account {
@@ -86,12 +68,44 @@ model Agent {
   slug        String @unique
   name        String
   description String
-  version     String @default("1.0.0")
 
-  runs Run[]
+  version String @default("1.0.0")
+
+  capabilities String[] @default([])
+  tools        String[] @default([])
+  permissions  String[] @default([])
+
+  category String?
+
+  isActive Boolean @default(true)
+
+  runs               Run[]
+  orchestrationSteps OrchestrationStep[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Run {
+  id     String    @id @default(cuid())
+  status RunStatus @default(PENDING)
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  result Json?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  orchestrationStep OrchestrationStep?
+
+  createdAt DateTime @default(now())
+
+  events TraceEvent[]
 }
 
 model TraceEvent {
@@ -102,6 +116,77 @@ model TraceEvent {
 
   runId String
   run   Run    @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model OrchestrationRun {
+  id String @id @default(cuid())
+
+  goal String
+
+  status OrchestrationStatus @default(PLANNING)
+
+  summary String?
+
+  plan Json?
+
+  context Json?
+
+  unresolvedCapabilities String[] @default([])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  steps  OrchestrationStep[]
+  events OrchestrationEvent[]
+
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+}
+
+model OrchestrationStep {
+  id String @id @default(cuid())
+
+  orchestrationId String
+  orchestration   OrchestrationRun @relation(fields: [orchestrationId], references: [id], onDelete: Cascade)
+
+  agentId String?
+  agent   Agent?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  runId String? @unique
+  run   Run?    @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  position Int
+
+  status OrchestrationStepStatus @default(PENDING)
+
+  satisfies String[] @default([])
+
+  requiredCapabilities String[] @default([])
+
+  optionalCapabilities String[] @default([])
+
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@unique([orchestrationId, position])
+}
+
+model OrchestrationEvent {
+  id String @id @default(cuid())
+
+  type OrchestrationEventType
+
+  message String
+
+  metadata Json?
+
+  orchestrationId String
+  orchestration   OrchestrationRun @relation(fields: [orchestrationId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 }
@@ -122,4 +207,33 @@ enum TraceEventType {
   LLM_COMPLETED
   RUN_COMPLETED
   ERROR
+}
+
+enum OrchestrationStatus {
+  PLANNING
+  BLOCKED
+  READY
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum OrchestrationStepStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum OrchestrationEventType {
+  PLAN_CREATED
+  AGENT_SELECTED
+  ORCHESTRATION_STARTED
+  STEP_STARTED
+  STEP_COMPLETED
+  STEP_FAILED
+  ORCHESTRATION_COMPLETED
+  ORCHESTRATION_FAILED
 }

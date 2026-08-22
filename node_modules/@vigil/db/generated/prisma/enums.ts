@@ -31,3 +31,41 @@ export const TraceEventType = {
 } as const
 
 export type TraceEventType = (typeof TraceEventType)[keyof typeof TraceEventType]
+
+
+export const OrchestrationStatus = {
+  PLANNING: 'PLANNING',
+  BLOCKED: 'BLOCKED',
+  READY: 'READY',
+  RUNNING: 'RUNNING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type OrchestrationStatus = (typeof OrchestrationStatus)[keyof typeof OrchestrationStatus]
+
+
+export const OrchestrationStepStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED'
+} as const
+
+export type OrchestrationStepStatus = (typeof OrchestrationStepStatus)[keyof typeof OrchestrationStepStatus]
+
+
+export const OrchestrationEventType = {
+  PLAN_CREATED: 'PLAN_CREATED',
+  AGENT_SELECTED: 'AGENT_SELECTED',
+  ORCHESTRATION_STARTED: 'ORCHESTRATION_STARTED',
+  STEP_STARTED: 'STEP_STARTED',
+  STEP_COMPLETED: 'STEP_COMPLETED',
+  STEP_FAILED: 'STEP_FAILED',
+  ORCHESTRATION_COMPLETED: 'ORCHESTRATION_COMPLETED',
+  ORCHESTRATION_FAILED: 'ORCHESTRATION_FAILED'
+} as const
+
+export type OrchestrationEventType = (typeof OrchestrationEventType)[keyof typeof OrchestrationEventType]

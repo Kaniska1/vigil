@@ -1,6 +1,4 @@
-import type {
-  Response,
-} from "express";
+import type { Response } from "express";
 
 import prisma from "../lib/prisma.js";
 
@@ -16,9 +14,8 @@ export async function streamRun(
   req: AuthenticatedRequest,
   res: Response
 ) {
-  const runId = String(
-    req.params.runId
-  );
+  const runId =
+    String(req.params.runId);
 
   const userId =
     req.userId;
@@ -30,10 +27,6 @@ export async function streamRun(
     });
   }
 
-  /*
-   * Ownership is checked directly in the database query.
-   * If the run belongs to somebody else, treat it as not found.
-   */
   const run =
     await prisma.run.findFirst({
       where: {
@@ -82,8 +75,35 @@ export async function streamRun(
   };
 
   /*
-   * Replay existing persisted events first.
+   * Subscribe first so that events produced
+   * while we replay PostgreSQL history are
+   * not completely missed.
    */
+  const unsubscribe =
+    await subscribeToRun(
+      runId,
+      (event) => {
+        send(
+          "trace",
+          event
+        );
+
+        if (
+          event.type ===
+            "RUN_COMPLETED" ||
+          event.type === "ERROR"
+        ) {
+          send("done", {
+            runId,
+          });
+
+          void unsubscribe();
+
+          res.end();
+        }
+      }
+    );
+
   const existingEvents =
     await prisma.traceEvent.findMany({
       where: {
@@ -105,8 +125,8 @@ export async function streamRun(
   }
 
   /*
-   * If the run completed before this SSE connection opened,
-   * immediately send a done event.
+   * The run may have completed before the
+   * SSE connection was established.
    */
   const latestRun =
     await prisma.run.findFirst({
@@ -126,51 +146,21 @@ export async function streamRun(
     latestRun?.status ===
       "FAILED"
   ) {
-    send(
-      "done",
-      {
-        runId,
-        status:
-          latestRun.status,
-      }
-    );
+    send("done", {
+      runId,
+      status:
+        latestRun.status,
+    });
+
+    await unsubscribe();
 
     return res.end();
   }
 
-  const unsubscribe =
-    subscribeToRun(
-      runId,
-      (event) => {
-        send(
-          "trace",
-          event
-        );
-
-        if (
-          event.type ===
-            "RUN_COMPLETED" ||
-          event.type ===
-            "ERROR"
-        ) {
-          send(
-            "done",
-            {
-              runId,
-            }
-          );
-
-          unsubscribe();
-
-          res.end();
-        }
-      }
-    );
-
   req.on(
     "close",
     () => {
-      unsubscribe();
+      void unsubscribe();
     }
   );
 }

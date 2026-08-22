@@ -1,28 +1,80 @@
-import type { Request, Response } from "express";
+import type {
+  Request,
+  Response,
+} from "express";
 
-import prisma from "../lib/prisma.js";
+import {
+  discoverAgents,
+} from "../services/agent-registry.service.js";
 
-export const getAgents = async (
-  _req: Request,
-  res: Response
-) => {
-  try {
-    const agents = await prisma.agent.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+export const getAgents =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const capability =
+        typeof req.query
+          .capability ===
+        "string"
+          ? req.query
+              .capability
+          : undefined;
 
-    return res.json({
-      success: true,
-      data: agents,
-    });
-  } catch (error) {
-    console.error("Failed to fetch agents:", error);
+      const tool =
+        typeof req.query
+          .tool ===
+        "string"
+          ? req.query.tool
+          : undefined;
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch agents",
-    });
-  }
-};
+      const permission =
+        typeof req.query
+          .permission ===
+        "string"
+          ? req.query
+              .permission
+          : undefined;
+
+      const category =
+        typeof req.query
+          .category ===
+        "string"
+          ? req.query
+              .category
+          : undefined;
+
+      const search =
+        typeof req.query.q ===
+        "string"
+          ? req.query.q
+          : undefined;
+
+      const agents =
+        await discoverAgents({
+          capability,
+          tool,
+          permission,
+          category,
+          search,
+        });
+
+      return res.json({
+        success: true,
+        data: agents,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to fetch agents:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message:
+            "Failed to fetch agents",
+        });
+    }
+  };

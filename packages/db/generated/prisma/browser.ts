@@ -23,11 +23,6 @@ export * from './enums.ts';
  */
 export type User = Prisma.UserModel
 /**
- * Model Run
- * 
- */
-export type Run = Prisma.RunModel
-/**
  * Model Account
  * 
  */
@@ -48,7 +43,27 @@ export type VerificationToken = Prisma.VerificationTokenModel
  */
 export type Agent = Prisma.AgentModel
 /**
+ * Model Run
+ * 
+ */
+export type Run = Prisma.RunModel
+/**
  * Model TraceEvent
  * 
  */
 export type TraceEvent = Prisma.TraceEventModel
+/**
+ * Model OrchestrationRun
+ * 
+ */
+export type OrchestrationRun = Prisma.OrchestrationRunModel
+/**
+ * Model OrchestrationStep
+ * 
+ */
+export type OrchestrationStep = Prisma.OrchestrationStepModel
+/**
+ * Model OrchestrationEvent
+ * 
+ */
+export type OrchestrationEvent = Prisma.OrchestrationEventModel

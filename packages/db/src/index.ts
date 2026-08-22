@@ -13,9 +13,10 @@ if (!connectionString) {
   );
 }
 
-const adapter = new PrismaPg({
-  connectionString,
-});
+const adapter =
+  new PrismaPg({
+    connectionString,
+  });
 
 const globalForPrisma =
   globalThis as unknown as {
@@ -29,9 +30,11 @@ export const prisma =
   });
 
 if (
-  process.env.NODE_ENV !== "production"
+  process.env.NODE_ENV !==
+  "production"
 ) {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma =
+    prisma;
 }
 
 export type {
@@ -42,6 +45,10 @@ export type {
   User,
   Account,
   Session,
+  OrchestrationRun,
+  OrchestrationStep,
+  OrchestrationEvent,
+  OrchestrationEventType,
 } from "../generated/prisma/client";
 
 export default prisma;

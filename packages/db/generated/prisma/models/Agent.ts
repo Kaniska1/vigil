@@ -30,6 +30,8 @@ export type AgentMinAggregateOutputType = {
   name: string | null
   description: string | null
   version: string | null
+  category: string | null
+  isActive: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -40,6 +42,8 @@ export type AgentMaxAggregateOutputType = {
   name: string | null
   description: string | null
   version: string | null
+  category: string | null
+  isActive: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,6 +54,11 @@ export type AgentCountAggregateOutputType = {
   name: number
   description: number
   version: number
+  capabilities: number
+  tools: number
+  permissions: number
+  category: number
+  isActive: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -62,6 +71,8 @@ export type AgentMinAggregateInputType = {
   name?: true
   description?: true
   version?: true
+  category?: true
+  isActive?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -72,6 +83,8 @@ export type AgentMaxAggregateInputType = {
   name?: true
   description?: true
   version?: true
+  category?: true
+  isActive?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +95,11 @@ export type AgentCountAggregateInputType = {
   name?: true
   description?: true
   version?: true
+  capabilities?: true
+  tools?: true
+  permissions?: true
+  category?: true
+  isActive?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -165,6 +183,11 @@ export type AgentGroupByOutputType = {
   name: string
   description: string
   version: string
+  capabilities: string[]
+  tools: string[]
+  permissions: string[]
+  category: string | null
+  isActive: boolean
   createdAt: Date
   updatedAt: Date
   _count: AgentCountAggregateOutputType | null
@@ -196,9 +219,15 @@ export type AgentWhereInput = {
   name?: Prisma.StringFilter<"Agent"> | string
   description?: Prisma.StringFilter<"Agent"> | string
   version?: Prisma.StringFilter<"Agent"> | string
+  capabilities?: Prisma.StringNullableListFilter<"Agent">
+  tools?: Prisma.StringNullableListFilter<"Agent">
+  permissions?: Prisma.StringNullableListFilter<"Agent">
+  category?: Prisma.StringNullableFilter<"Agent"> | string | null
+  isActive?: Prisma.BoolFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   runs?: Prisma.RunListRelationFilter
+  orchestrationSteps?: Prisma.OrchestrationStepListRelationFilter
 }
 
 export type AgentOrderByWithRelationInput = {
@@ -207,9 +236,15 @@ export type AgentOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  capabilities?: Prisma.SortOrder
+  tools?: Prisma.SortOrder
+  permissions?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   runs?: Prisma.RunOrderByRelationAggregateInput
+  orchestrationSteps?: Prisma.OrchestrationStepOrderByRelationAggregateInput
 }
 
 export type AgentWhereUniqueInput = Prisma.AtLeast<{
@@ -221,9 +256,15 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Agent"> | string
   description?: Prisma.StringFilter<"Agent"> | string
   version?: Prisma.StringFilter<"Agent"> | string
+  capabilities?: Prisma.StringNullableListFilter<"Agent">
+  tools?: Prisma.StringNullableListFilter<"Agent">
+  permissions?: Prisma.StringNullableListFilter<"Agent">
+  category?: Prisma.StringNullableFilter<"Agent"> | string | null
+  isActive?: Prisma.BoolFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   runs?: Prisma.RunListRelationFilter
+  orchestrationSteps?: Prisma.OrchestrationStepListRelationFilter
 }, "id" | "slug">
 
 export type AgentOrderByWithAggregationInput = {
@@ -232,6 +273,11 @@ export type AgentOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  capabilities?: Prisma.SortOrder
+  tools?: Prisma.SortOrder
+  permissions?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.AgentCountOrderByAggregateInput
@@ -248,6 +294,11 @@ export type AgentScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Agent"> | string
   description?: Prisma.StringWithAggregatesFilter<"Agent"> | string
   version?: Prisma.StringWithAggregatesFilter<"Agent"> | string
+  capabilities?: Prisma.StringNullableListFilter<"Agent">
+  tools?: Prisma.StringNullableListFilter<"Agent">
+  permissions?: Prisma.StringNullableListFilter<"Agent">
+  category?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null
+  isActive?: Prisma.BoolWithAggregatesFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
 }
@@ -258,9 +309,15 @@ export type AgentCreateInput = {
   name: string
   description: string
   version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   runs?: Prisma.RunCreateNestedManyWithoutAgentInput
+  orchestrationSteps?: Prisma.OrchestrationStepCreateNestedManyWithoutAgentInput
 }
 
 export type AgentUncheckedCreateInput = {
@@ -269,9 +326,15 @@ export type AgentUncheckedCreateInput = {
   name: string
   description: string
   version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   runs?: Prisma.RunUncheckedCreateNestedManyWithoutAgentInput
+  orchestrationSteps?: Prisma.OrchestrationStepUncheckedCreateNestedManyWithoutAgentInput
 }
 
 export type AgentUpdateInput = {
@@ -280,9 +343,15 @@ export type AgentUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   runs?: Prisma.RunUpdateManyWithoutAgentNestedInput
+  orchestrationSteps?: Prisma.OrchestrationStepUpdateManyWithoutAgentNestedInput
 }
 
 export type AgentUncheckedUpdateInput = {
@@ -291,9 +360,15 @@ export type AgentUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   runs?: Prisma.RunUncheckedUpdateManyWithoutAgentNestedInput
+  orchestrationSteps?: Prisma.OrchestrationStepUncheckedUpdateManyWithoutAgentNestedInput
 }
 
 export type AgentCreateManyInput = {
@@ -302,6 +377,11 @@ export type AgentCreateManyInput = {
   name: string
   description: string
   version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -312,6 +392,11 @@ export type AgentUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -322,13 +407,21 @@ export type AgentUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type AgentScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput
-  isNot?: Prisma.AgentWhereInput
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type AgentCountOrderByAggregateInput = {
@@ -337,6 +430,11 @@ export type AgentCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  capabilities?: Prisma.SortOrder
+  tools?: Prisma.SortOrder
+  permissions?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -347,6 +445,8 @@ export type AgentMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -357,8 +457,51 @@ export type AgentMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type AgentScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput
+  isNot?: Prisma.AgentWhereInput
+}
+
+export type AgentNullableScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput | null
+  isNot?: Prisma.AgentWhereInput | null
+}
+
+export type AgentCreatecapabilitiesInput = {
+  set: string[]
+}
+
+export type AgentCreatetoolsInput = {
+  set: string[]
+}
+
+export type AgentCreatepermissionsInput = {
+  set: string[]
+}
+
+export type AgentUpdatecapabilitiesInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type AgentUpdatetoolsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type AgentUpdatepermissionsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type AgentCreateNestedOneWithoutRunsInput = {
@@ -375,14 +518,36 @@ export type AgentUpdateOneRequiredWithoutRunsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutRunsInput, Prisma.AgentUpdateWithoutRunsInput>, Prisma.AgentUncheckedUpdateWithoutRunsInput>
 }
 
+export type AgentCreateNestedOneWithoutOrchestrationStepsInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutOrchestrationStepsInput, Prisma.AgentUncheckedCreateWithoutOrchestrationStepsInput>
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutOrchestrationStepsInput
+  connect?: Prisma.AgentWhereUniqueInput
+}
+
+export type AgentUpdateOneWithoutOrchestrationStepsNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutOrchestrationStepsInput, Prisma.AgentUncheckedCreateWithoutOrchestrationStepsInput>
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutOrchestrationStepsInput
+  upsert?: Prisma.AgentUpsertWithoutOrchestrationStepsInput
+  disconnect?: Prisma.AgentWhereInput | boolean
+  delete?: Prisma.AgentWhereInput | boolean
+  connect?: Prisma.AgentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutOrchestrationStepsInput, Prisma.AgentUpdateWithoutOrchestrationStepsInput>, Prisma.AgentUncheckedUpdateWithoutOrchestrationStepsInput>
+}
+
 export type AgentCreateWithoutRunsInput = {
   id?: string
   slug: string
   name: string
   description: string
   version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  orchestrationSteps?: Prisma.OrchestrationStepCreateNestedManyWithoutAgentInput
 }
 
 export type AgentUncheckedCreateWithoutRunsInput = {
@@ -391,8 +556,14 @@ export type AgentUncheckedCreateWithoutRunsInput = {
   name: string
   description: string
   version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  orchestrationSteps?: Prisma.OrchestrationStepUncheckedCreateNestedManyWithoutAgentInput
 }
 
 export type AgentCreateOrConnectWithoutRunsInput = {
@@ -417,8 +588,14 @@ export type AgentUpdateWithoutRunsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orchestrationSteps?: Prisma.OrchestrationStepUpdateManyWithoutAgentNestedInput
 }
 
 export type AgentUncheckedUpdateWithoutRunsInput = {
@@ -427,8 +604,94 @@ export type AgentUncheckedUpdateWithoutRunsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orchestrationSteps?: Prisma.OrchestrationStepUncheckedUpdateManyWithoutAgentNestedInput
+}
+
+export type AgentCreateWithoutOrchestrationStepsInput = {
+  id?: string
+  slug: string
+  name: string
+  description: string
+  version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  runs?: Prisma.RunCreateNestedManyWithoutAgentInput
+}
+
+export type AgentUncheckedCreateWithoutOrchestrationStepsInput = {
+  id?: string
+  slug: string
+  name: string
+  description: string
+  version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  category?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  runs?: Prisma.RunUncheckedCreateNestedManyWithoutAgentInput
+}
+
+export type AgentCreateOrConnectWithoutOrchestrationStepsInput = {
+  where: Prisma.AgentWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentCreateWithoutOrchestrationStepsInput, Prisma.AgentUncheckedCreateWithoutOrchestrationStepsInput>
+}
+
+export type AgentUpsertWithoutOrchestrationStepsInput = {
+  update: Prisma.XOR<Prisma.AgentUpdateWithoutOrchestrationStepsInput, Prisma.AgentUncheckedUpdateWithoutOrchestrationStepsInput>
+  create: Prisma.XOR<Prisma.AgentCreateWithoutOrchestrationStepsInput, Prisma.AgentUncheckedCreateWithoutOrchestrationStepsInput>
+  where?: Prisma.AgentWhereInput
+}
+
+export type AgentUpdateToOneWithWhereWithoutOrchestrationStepsInput = {
+  where?: Prisma.AgentWhereInput
+  data: Prisma.XOR<Prisma.AgentUpdateWithoutOrchestrationStepsInput, Prisma.AgentUncheckedUpdateWithoutOrchestrationStepsInput>
+}
+
+export type AgentUpdateWithoutOrchestrationStepsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  runs?: Prisma.RunUpdateManyWithoutAgentNestedInput
+}
+
+export type AgentUncheckedUpdateWithoutOrchestrationStepsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  runs?: Prisma.RunUncheckedUpdateManyWithoutAgentNestedInput
 }
 
 
@@ -438,10 +701,12 @@ export type AgentUncheckedUpdateWithoutRunsInput = {
 
 export type AgentCountOutputType = {
   runs: number
+  orchestrationSteps: number
 }
 
 export type AgentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   runs?: boolean | AgentCountOutputTypeCountRunsArgs
+  orchestrationSteps?: boolean | AgentCountOutputTypeCountOrchestrationStepsArgs
 }
 
 /**
@@ -461,6 +726,13 @@ export type AgentCountOutputTypeCountRunsArgs<ExtArgs extends runtime.Types.Exte
   where?: Prisma.RunWhereInput
 }
 
+/**
+ * AgentCountOutputType without action
+ */
+export type AgentCountOutputTypeCountOrchestrationStepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OrchestrationStepWhereInput
+}
+
 
 export type AgentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -468,9 +740,15 @@ export type AgentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   name?: boolean
   description?: boolean
   version?: boolean
+  capabilities?: boolean
+  tools?: boolean
+  permissions?: boolean
+  category?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   runs?: boolean | Prisma.Agent$runsArgs<ExtArgs>
+  orchestrationSteps?: boolean | Prisma.Agent$orchestrationStepsArgs<ExtArgs>
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
@@ -480,6 +758,11 @@ export type AgentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   name?: boolean
   description?: boolean
   version?: boolean
+  capabilities?: boolean
+  tools?: boolean
+  permissions?: boolean
+  category?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["agent"]>
@@ -490,6 +773,11 @@ export type AgentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   name?: boolean
   description?: boolean
   version?: boolean
+  capabilities?: boolean
+  tools?: boolean
+  permissions?: boolean
+  category?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["agent"]>
@@ -500,13 +788,19 @@ export type AgentSelectScalar = {
   name?: boolean
   description?: boolean
   version?: boolean
+  capabilities?: boolean
+  tools?: boolean
+  permissions?: boolean
+  category?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "description" | "version" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
+export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "description" | "version" | "capabilities" | "tools" | "permissions" | "category" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
 export type AgentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   runs?: boolean | Prisma.Agent$runsArgs<ExtArgs>
+  orchestrationSteps?: boolean | Prisma.Agent$orchestrationStepsArgs<ExtArgs>
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AgentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -516,6 +810,7 @@ export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Agent"
   objects: {
     runs: Prisma.$RunPayload<ExtArgs>[]
+    orchestrationSteps: Prisma.$OrchestrationStepPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -523,6 +818,11 @@ export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     name: string
     description: string
     version: string
+    capabilities: string[]
+    tools: string[]
+    permissions: string[]
+    category: string | null
+    isActive: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["agent"]>
@@ -920,6 +1220,7 @@ readonly fields: AgentFieldRefs;
 export interface Prisma__AgentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   runs<T extends Prisma.Agent$runsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$runsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  orchestrationSteps<T extends Prisma.Agent$orchestrationStepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$orchestrationStepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrchestrationStepPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -954,6 +1255,11 @@ export interface AgentFieldRefs {
   readonly name: Prisma.FieldRef<"Agent", 'String'>
   readonly description: Prisma.FieldRef<"Agent", 'String'>
   readonly version: Prisma.FieldRef<"Agent", 'String'>
+  readonly capabilities: Prisma.FieldRef<"Agent", 'String[]'>
+  readonly tools: Prisma.FieldRef<"Agent", 'String[]'>
+  readonly permissions: Prisma.FieldRef<"Agent", 'String[]'>
+  readonly category: Prisma.FieldRef<"Agent", 'String'>
+  readonly isActive: Prisma.FieldRef<"Agent", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Agent", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Agent", 'DateTime'>
 }
@@ -1370,6 +1676,30 @@ export type Agent$runsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
   take?: number
   skip?: number
   distinct?: Prisma.RunScalarFieldEnum | Prisma.RunScalarFieldEnum[]
+}
+
+/**
+ * Agent.orchestrationSteps
+ */
+export type Agent$orchestrationStepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OrchestrationStep
+   */
+  select?: Prisma.OrchestrationStepSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OrchestrationStep
+   */
+  omit?: Prisma.OrchestrationStepOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrchestrationStepInclude<ExtArgs> | null
+  where?: Prisma.OrchestrationStepWhereInput
+  orderBy?: Prisma.OrchestrationStepOrderByWithRelationInput | Prisma.OrchestrationStepOrderByWithRelationInput[]
+  cursor?: Prisma.OrchestrationStepWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OrchestrationStepScalarFieldEnum | Prisma.OrchestrationStepScalarFieldEnum[]
 }
 
 /**

@@ -13,6 +13,10 @@ import {
   executeAgentRun,
 } from "../services/run.service.js";
 
+import {
+  runQueue,
+} from "../queue/run.queue.js";
+
 export const createRun = async (
   req: AuthenticatedRequest,
   res: Response
@@ -38,16 +42,33 @@ export const createRun = async (
         userId
       );
 
-    void executeAgentRun(
-      run.id,
-      slug,
-      req.body ?? {}
-    ).catch((error) => {
-      console.error(
-        `Background run ${run.id} failed:`,
-        error
-      );
-    });
+    await runQueue.add(
+  "execute-agent-run",
+  {
+    runId: run.id,
+    slug,
+    input:
+      req.body ?? {},
+  },
+  {
+    jobId: run.id,
+
+    attempts: 3,
+
+    backoff: {
+      type: "exponential",
+      delay: 1000,
+    },
+
+    removeOnComplete: {
+      age: 60 * 60,
+    },
+
+    removeOnFail: {
+      age: 24 * 60 * 60,
+    },
+  }
+);
 
     return res.status(202).json({
       success: true,

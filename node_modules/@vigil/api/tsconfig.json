@@ -14,5 +14,5 @@
     "forceConsistentCasingInFileNames": true
   },
 
-  "include": ["src"]
+  "include": ["src", "../web/src/app/api/plan"]
 }

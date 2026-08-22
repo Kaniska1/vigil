@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import {
   GoogleGenAI,
+  ThinkingLevel,
 } from "@google/genai";
 
 import type {
@@ -15,6 +16,10 @@ const MODEL =
 
 const RETRYABLE_STATUS_CODES =
   new Set([429, 503]);
+
+type GeminiGenerationOptions = {
+  lowLatency?: boolean;
+};
 
 function sleep(
   milliseconds: number
@@ -72,67 +77,118 @@ export class GeminiProvider
   }
 
   async generate(
-    request: LLMRequest
+    request: LLMRequest,
+    options: GeminiGenerationOptions = {}
   ): Promise<LLMResponse> {
-    const maxRetries = 3;
+    const maxRetries =
+      options.lowLatency
+        ? 1
+        : 3;
 
     let attempt = 0;
 
     while (true) {
+      const startedAt =
+        Date.now();
+
       try {
         const response =
           await this.client.models.generateContent(
             {
-              model: MODEL,
+              model:
+                MODEL,
 
               contents:
                 request.prompt,
 
               config: {
-                systemInstruction:
-                  request.systemPrompt,
-              },
+  systemInstruction:
+    request.systemPrompt,
+
+  ...(options.lowLatency
+    ? {
+        thinkingConfig: {
+          thinkingLevel:
+            ThinkingLevel.MINIMAL,
+        },
+
+        maxOutputTokens:
+          800,
+      }
+    : {}),
+},
             }
           );
 
         const usage =
           response.usageMetadata;
 
+        console.log(
+          `[Gemini] Request completed in ${
+            Date.now() -
+            startedAt
+          }ms${
+            options.lowLatency
+              ? " [low-latency]"
+              : ""
+          }`
+        );
+
         return {
           text:
-            response.text ?? "",
+            response.text ??
+            "",
 
-          model: MODEL,
+          model:
+            MODEL,
 
-          usage: usage
-            ? {
-                inputTokens:
-                  usage.promptTokenCount,
+          usage:
+            usage
+              ? {
+                  inputTokens:
+                    usage.promptTokenCount,
 
-                outputTokens:
-                  usage.candidatesTokenCount,
+                  outputTokens:
+                    usage.candidatesTokenCount,
 
-                thinkingTokens:
-                  usage.thoughtsTokenCount,
+                  thinkingTokens:
+                    usage.thoughtsTokenCount,
 
-                totalTokens:
-                  usage.totalTokenCount,
-              }
-            : undefined,
+                  totalTokens:
+                    usage.totalTokenCount,
+                }
+              : undefined,
         };
       } catch (error) {
         const status =
-          getErrorStatus(error);
+          getErrorStatus(
+            error
+          );
 
         const retryable =
-          status !== undefined &&
+          status !==
+            undefined &&
           RETRYABLE_STATUS_CODES.has(
             status
           );
 
+        console.warn(
+          `[Gemini] Request attempt ${
+            attempt + 1
+          } failed after ${
+            Date.now() -
+            startedAt
+          }ms`,
+          {
+            status,
+            retryable,
+          }
+        );
+
         if (
           !retryable ||
-          attempt >= maxRetries
+          attempt >=
+            maxRetries
         ) {
           throw error;
         }
@@ -146,7 +202,13 @@ export class GeminiProvider
 
         attempt++;
 
-        await sleep(delay);
+        console.warn(
+          `[Gemini] Retrying in ${delay}ms`
+        );
+
+        await sleep(
+          delay
+        );
       }
     }
   }

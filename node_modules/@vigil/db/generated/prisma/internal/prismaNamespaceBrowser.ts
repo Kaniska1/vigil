@@ -52,12 +52,15 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
-  Run: 'Run',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   Agent: 'Agent',
-  TraceEvent: 'TraceEvent'
+  Run: 'Run',
+  TraceEvent: 'TraceEvent',
+  OrchestrationRun: 'OrchestrationRun',
+  OrchestrationStep: 'OrchestrationStep',
+  OrchestrationEvent: 'OrchestrationEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -87,20 +90,6 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
-
-
-export const RunScalarFieldEnum = {
-  id: 'id',
-  status: 'status',
-  agentId: 'agentId',
-  userId: 'userId',
-  result: 'result',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt',
-  createdAt: 'createdAt'
-} as const
-
-export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
 export const AccountScalarFieldEnum = {
@@ -146,11 +135,30 @@ export const AgentScalarFieldEnum = {
   name: 'name',
   description: 'description',
   version: 'version',
+  capabilities: 'capabilities',
+  tools: 'tools',
+  permissions: 'permissions',
+  category: 'category',
+  isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
+
+
+export const RunScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  agentId: 'agentId',
+  userId: 'userId',
+  result: 'result',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
 export const TraceEventScalarFieldEnum = {
@@ -163,6 +171,54 @@ export const TraceEventScalarFieldEnum = {
 } as const
 
 export type TraceEventScalarFieldEnum = (typeof TraceEventScalarFieldEnum)[keyof typeof TraceEventScalarFieldEnum]
+
+
+export const OrchestrationRunScalarFieldEnum = {
+  id: 'id',
+  goal: 'goal',
+  status: 'status',
+  summary: 'summary',
+  plan: 'plan',
+  context: 'context',
+  unresolvedCapabilities: 'unresolvedCapabilities',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type OrchestrationRunScalarFieldEnum = (typeof OrchestrationRunScalarFieldEnum)[keyof typeof OrchestrationRunScalarFieldEnum]
+
+
+export const OrchestrationStepScalarFieldEnum = {
+  id: 'id',
+  orchestrationId: 'orchestrationId',
+  agentId: 'agentId',
+  runId: 'runId',
+  position: 'position',
+  status: 'status',
+  satisfies: 'satisfies',
+  requiredCapabilities: 'requiredCapabilities',
+  optionalCapabilities: 'optionalCapabilities',
+  createdAt: 'createdAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt'
+} as const
+
+export type OrchestrationStepScalarFieldEnum = (typeof OrchestrationStepScalarFieldEnum)[keyof typeof OrchestrationStepScalarFieldEnum]
+
+
+export const OrchestrationEventScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  message: 'message',
+  metadata: 'metadata',
+  orchestrationId: 'orchestrationId',
+  createdAt: 'createdAt'
+} as const
+
+export type OrchestrationEventScalarFieldEnum = (typeof OrchestrationEventScalarFieldEnum)[keyof typeof OrchestrationEventScalarFieldEnum]
 
 
 export const SortOrder = {
