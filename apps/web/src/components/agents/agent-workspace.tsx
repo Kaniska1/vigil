@@ -303,159 +303,114 @@ export function AgentWorkspace({
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Activity className="size-5" />
-
-            <Badge variant="secondary">
-              Agent Infrastructure
-            </Badge>
+    <div>
+      <div className="mb-7 flex flex-col gap-5 border-b border-[#333333] pb-7 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <div className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--text-500)]">
+            <Activity className="size-4 text-[#9166ff]" />
+            Agent registry
+            <Badge variant="secondary">{agents.length} active</Badge>
           </div>
-
-          <h1 className="text-4xl font-semibold tracking-tight">
-            Vigil
+          <h1 className="text-gradient text-3xl font-extrabold tracking-[-0.045em] sm:text-[38px]">
+            Build with specialist agents.
           </h1>
-
-          <p className="max-w-2xl text-muted-foreground">
-            Discover, execute, and
-            inspect AI agents.
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-[var(--text-600)]">
+            Discover first-party agents, inspect their capabilities, execute them against real inputs, and follow every runtime event.
           </p>
         </div>
+      </div>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-3">
-            {agents.map(
-              (agent) => {
-                const selected =
-                  selectedAgent?.id ===
-                  agent.id;
-
-                return (
-                  <Card
-                    key={
-                      agent.id
-                    }
-                    className={
-                      selected
-                        ? "cursor-pointer border-primary"
-                        : "cursor-pointer"
-                    }
-                    onClick={() =>
-                      handleAgentSelection(
-                        agent
-                      )
-                    }
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-md border">
-                          <Bot className="size-5" />
-                        </div>
-
-                        <Badge variant="outline">
-                          v
-                          {
-                            agent.version
-                          }
-                        </Badge>
-                      </div>
-
-                      <CardTitle className="pt-3">
-                        {
-                          agent.name
-                        }
-                      </CardTitle>
-
-                      <CardDescription>
-                        {
-                          agent.description
-                        }
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                );
-              }
-            )}
+      <div className="grid gap-5 xl:grid-cols-[350px_minmax(0,1fr)]">
+        <aside className="space-y-3">
+          <div className="mb-3 flex items-center justify-between px-1">
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--text-400)]">Available agents</p>
+            <span className="rounded-full bg-[#1a1a1a] px-2 py-1 text-[10px] font-bold text-[var(--text-500)]">REGISTRY</span>
           </div>
 
-          {selectedAgent ? (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="flex size-11 items-center justify-center rounded-md border">
-                    <GitPullRequest className="size-5" />
+          {agents.map((agent) => {
+            const selected = selectedAgent?.id === agent.id;
+            return (
+              <button
+                key={agent.id}
+                type="button"
+                onClick={() => handleAgentSelection(agent)}
+                className={`w-full rounded-2xl border p-4 text-left transition-all duration-200 ${
+                  selected
+                    ? "border-[#4800ff]/55 bg-gradient-to-br from-[#1b2034] to-[#1a1a1a] shadow-[0_16px_45px_rgba(69,57,168,.17),inset_0_1px_0_rgba(255,255,255,.04)]"
+                    : "border-[#333333] bg-[#1a1a1a]/75 hover:border-[#4d4d4d] hover:bg-[#1a1a1a]"
+                } ${running ? "cursor-not-allowed opacity-70" : ""}`}
+              >
+                <div className="flex items-start gap-3.5">
+                  <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl border ${selected ? "border-[#4800ff]/30 bg-[#4800ff]/15 text-[#b699ff]" : "border-[#333333] bg-[#1a1a1a] text-[var(--text-500)]"}`}>
+                    <Bot className="size-5" />
                   </div>
-
-                  <div>
-                    <CardTitle>
-                      {
-                        selectedAgent.name
-                      }
-                    </CardTitle>
-
-                    <CardDescription>
-                      {
-                        selectedAgent.slug
-                      }
-                    </CardDescription>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-extrabold tracking-[-0.02em] text-white">{agent.name}</p>
+                      <span className="font-mono text-[10px] font-medium text-[var(--text-500)]">v{agent.version}</span>
+                    </div>
+                    <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-5 text-[var(--text-500)]">{agent.description}</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {(agent.capabilities ?? []).slice(0, 2).map((capability) => (
+                        <span key={capability} className="rounded-lg border border-[#333333] bg-[#0d0d0d] px-2 py-1 font-mono text-[9px] text-[var(--text-600)]">{capability}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
+              </button>
+            );
+          })}
+        </aside>
 
-              <CardContent>
-                <Tabs defaultValue="playground">
-                  <TabsList>
-                    <TabsTrigger value="playground">
-                      <Play className="size-4" />
+        {selectedAgent ? (
+          <Card className="min-w-0 border-[#333333] bg-[#1a1a1a]/90">
+            <CardHeader className="border-b border-[#333333] pb-5">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-12 items-center justify-center rounded-2xl border border-[#007fff]/25 bg-gradient-to-br from-[#263765] to-[#292343] text-[#99a5ff] shadow-[0_12px_32px_rgba(61,74,177,.18)]">
+                    <GitPullRequest className="size-5" />
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle className="text-xl">{selectedAgent.name}</CardTitle>
+                      <Badge>First-party</Badge>
+                    </div>
+                    <CardDescription className="mt-1 font-mono text-xs">{selectedAgent.slug}@{selectedAgent.version}</CardDescription>
+                  </div>
+                </div>
+                <Badge variant={status === "FAILED" ? "destructive" : status === "RUNNING" ? "secondary" : "outline"}>
+                  <span className={`size-1.5 rounded-full ${status === "SUCCESS" ? "bg-[var(--accent-700)]" : status === "RUNNING" ? "bg-blue-400 animate-pulse" : status === "FAILED" ? "bg-red-400" : "bg-[var(--text-500)]"}`} />
+                  {status}
+                </Badge>
+              </div>
 
-                      Playground
-                    </TabsTrigger>
+              <p className="mt-5 max-w-3xl text-sm font-medium leading-6 text-[var(--text-600)]">{selectedAgent.description}</p>
 
-                    <TabsTrigger value="trace">
-                      <Braces className="size-4" />
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(selectedAgent.capabilities ?? []).map((capability) => <Badge key={capability} variant="secondary">{capability}</Badge>)}
+                {(selectedAgent.tools ?? []).map((tool) => <Badge key={tool} variant="outline">{tool}</Badge>)}
+              </div>
+            </CardHeader>
 
-                      Trace
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="playground">
-                    <AgentPlayground
-                      running={
-                        running
-                      }
-                      status={
-                        status
-                      }
-                      result={
-                        completedRun
-                      }
-                      onRun={
-                        handleRun
-                      }
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="trace">
-                    <RunTrace
-                      runId={
-                        runId
-                      }
-                      status={
-                        status
-                      }
-                      events={
-                        events
-                      }
-                    />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
+            <CardContent className="pt-5">
+              <Tabs defaultValue="playground">
+                <TabsList>
+                  <TabsTrigger value="playground"><Play /> Playground</TabsTrigger>
+                  <TabsTrigger value="trace"><Braces /> Live trace {events.length ? <span className="ml-1 rounded-full bg-[#4800ff]/20 px-1.5 text-[10px] text-[#b699ff]">{events.length}</span> : null}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="playground">
+                  <AgentPlayground running={running} status={status} result={completedRun} onRun={handleRun} />
+                </TabsContent>
+                <TabsContent value="trace">
+                  <RunTrace runId={runId} status={status} events={events} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card><CardContent className="flex min-h-[520px] items-center justify-center text-sm font-semibold text-muted-foreground">No agents are registered yet.</CardContent></Card>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

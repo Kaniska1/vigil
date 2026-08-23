@@ -1,18 +1,29 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
 
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
 
-    "forceConsistentCasingInFileNames": true
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    "noEmit": true,
+
+    "types": [
+      "node"
+    ]
   },
 
-  "include": ["src", "../web/src/app/api/plan"]
+  "include": [
+    "src/**/*.ts"
+  ],
+
+  "exclude": [
+    "node_modules"
+  ]
 }

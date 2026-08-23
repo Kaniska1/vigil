@@ -5,14 +5,10 @@ import {
   useState,
 } from "react";
 
-import Link from "next/link";
-
 import {
   Bot,
   CheckCircle2,
   CircleX,
-  Clock3,
-  ExternalLink,
   Loader2,
   Network,
   Play,
@@ -25,16 +21,12 @@ import {
 
 import {
   Button,
-  buttonVariants,
 } from "@/components/ui/button";
 
-import {
-  Input,
-} from "@/components/ui/input";
-
-import {
-  Textarea,
-} from "@/components/ui/textarea";
+import { PromptBar } from "./prompt-bar";
+import { ThinkingState } from "./thinking-state";
+import { ContextCards } from "./context-cards";
+import { TaskRows } from "./task-rows";
 
 import {
   createOrchestratorPlan,
@@ -48,31 +40,8 @@ import type {
   OrchestrationEvent,
   OrchestrationEventType,
   OrchestrationStatus,
-  OrchestrationStepStatus,
   OrchestratorPlan,
 } from "@/lib/api";
-
-function getStepStatusVariant(
-  status: OrchestrationStepStatus
-):
-  | "default"
-  | "secondary"
-  | "destructive"
-  | "outline" {
-  switch (status) {
-    case "SUCCESS":
-      return "default";
-
-    case "FAILED":
-      return "destructive";
-
-    case "RUNNING":
-      return "secondary";
-
-    default:
-      return "outline";
-  }
-}
 
 function getEventLabel(
   type: OrchestrationEventType
@@ -536,687 +505,145 @@ export function OrchestratorPlayground() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Network className="size-5" />
-
-          <Badge variant="outline">
-            Orchestrator v0.3
-          </Badge>
+    <div>
+      <div className="mb-7 flex flex-col gap-5 border-b border-[var(--line)] pb-7 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <div className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink-3)]">
+            <Network className="size-4 text-[var(--accent-800)]" />
+            Autonomous orchestration
+            <Badge variant="secondary">v0.3</Badge>
+          </div>
+          <h1 className="text-gradient text-3xl font-extrabold tracking-[-0.045em] sm:text-[38px]">Plan. Route. Observe.</h1>
+          <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-[var(--ink-2)]">
+            Give Vigil a developer goal. The planner resolves capabilities, picks specialist agents, and exposes the full execution path.
+          </p>
         </div>
 
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Vigil Orchestrator
-        </h1>
-
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Give Vigil an objective.
-          It determines the required
-          capabilities, resolves
-          registered agents, persists
-          the workflow, executes it
-          asynchronously, and exposes
-          the orchestration lifecycle
-          live.
-        </p>
+        <div className="flex items-center gap-2">
+          <Badge variant={orchestrationStatus === "FAILED" ? "destructive" : orchestrationStatus === "RUNNING" ? "secondary" : "outline"}>
+            <span className={`size-1.5 rounded-full ${orchestrationStatus === "RUNNING" ? "bg-[var(--primary-600)] animate-pulse" : orchestrationStatus === "SUCCESS" ? "bg-[var(--accent-700)]" : orchestrationStatus === "FAILED" ? "bg-red-400" : "bg-[var(--text-500)]"}`} />
+            {orchestrationStatus ?? "IDLE"}
+          </Badge>
+          {isStreamConnected ? <Badge><Radio className="size-3" /> LIVE</Badge> : null}
+        </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="space-y-6 rounded-xl border bg-card p-6">
-          <div className="space-y-2">
-            <label
-              htmlFor="goal"
-              className="text-sm font-medium"
-            >
-              Goal
-            </label>
+      <div className="grid gap-5 2xl:grid-cols-[390px_minmax(0,1fr)]">
+        <section className="space-y-4">
+          <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_18px_55px_rgba(0,0,0,.24)]">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-extrabold text-[var(--ink)]">Developer goal</p>
+                <p className="mt-1 text-[11px] font-medium text-[var(--ink-3)]">Natural language in, validated execution plan out.</p>
+              </div>
+              <span className="rounded-[7px] border border-[var(--line)] bg-[var(--inset)] px-2 py-1 font-mono text-[9px] font-bold text-[var(--primary-800)]">PLANNER</span>
+            </div>
 
-            <Textarea
-              id="goal"
-              value={goal}
-              onChange={(
-                event
-              ) =>
-                setGoal(
-                  event.target
-                    .value
-                )
-              }
-              rows={5}
-              placeholder="Describe what you want Vigil to accomplish..."
-            />
+            <PromptBar value={goal} onChange={setGoal} onSend={handleCreatePlan} disabled={isPlanning || isExecuting} />
+
+            {error ? <div className="mt-3 rounded-[12px] border border-red-500/20 bg-red-500/8 p-3 text-[11.5px] font-semibold leading-5 text-red-300">{error}</div> : null}
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium">
-                Context
-              </p>
+          <ContextCards
+            repository={repository}
+            pullRequest={pullRequest}
+            onRepositoryChange={setRepository}
+            onPullRequestChange={setPullRequest}
+          />
 
-              <p className="mt-1 text-xs text-muted-foreground">
-                Runtime context
-                supplied to the
-                planner and selected
-                agents.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label
-                htmlFor="repository"
-                className="text-sm font-medium"
-              >
-                Repository
-              </label>
-
-              <Input
-                id="repository"
-                value={
-                  repository
-                }
-                onChange={(
-                  event
-                ) =>
-                  setRepository(
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="owner/repository"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label
-                htmlFor="pull-request"
-                className="text-sm font-medium"
-              >
-                Pull request
-              </label>
-
-              <Input
-                id="pull-request"
-                type="number"
-                min="1"
-                value={
-                  pullRequest
-                }
-                onChange={(
-                  event
-                ) =>
-                  setPullRequest(
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="1"
-              />
-            </div>
-          </div>
-
-          {error ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-
-          <Button
-            type="button"
-            className="w-full"
-            disabled={
-              isPlanning ||
-              isExecuting
-            }
-            onClick={
-              handleCreatePlan
-            }
-          >
-            {isPlanning ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Planning...
-              </>
-            ) : (
-              <>
-                <Network className="size-4" />
-                Create Plan
-              </>
-            )}
-          </Button>
-
-          {plan &&
-          orchestrationId ? (
-            <Button
-              type="button"
-              className="w-full"
-              disabled={
-                !plan.executable ||
-                orchestrationStatus !==
-                  "READY" ||
-                isExecuting
-              }
-              onClick={
-                handleExecutePlan
-              }
-            >
-              {isExecuting ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Starting...
-                </>
-              ) : (
-                <>
-                  <Play className="size-4" />
-                  Execute Plan
-                </>
-              )}
+          {plan && orchestrationId ? (
+            <Button type="button" size="lg" className="w-full rounded-[14px]" disabled={!plan.executable || orchestrationStatus !== "READY" || isExecuting} onClick={handleExecutePlan}>
+              {isExecuting ? <><Loader2 className="animate-spin" /> Starting runtime...</> : <><Play /> Execute plan</>}
             </Button>
           ) : null}
 
-          {orchestrationStatus ===
-          "RUNNING" ? (
-            <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs text-muted-foreground">
-              {isStreamConnected ? (
-                <>
-                  <Radio className="size-3" />
-                  Live orchestration
-                  stream connected
-                </>
-              ) : (
-                <>
-                  <Loader2 className="size-3 animate-spin" />
-                  Connecting to live
-                  stream...
-                </>
-              )}
+          {orchestrationStatus === "RUNNING" ? (
+            <div className="flex items-center gap-2 rounded-[13px] border border-[var(--primary-500)]/20 bg-[var(--blue-tint)] px-3 py-2.5 text-[11px] font-bold text-[var(--primary-800)]">
+              {isStreamConnected ? <Radio className="size-3.5" /> : <Loader2 className="size-3.5 animate-spin" />}
+              {isStreamConnected ? "Live execution stream connected" : "Connecting to orchestration stream"}
             </div>
           ) : null}
+        </section>
 
-          {plan &&
-          !plan.executable ? (
-            <p className="text-xs text-muted-foreground">
-              Execution is disabled
-              because required
-              capabilities are not
-              currently provided by
-              the registered agent
-              fleet.
-            </p>
-          ) : null}
-        </div>
-
-        <div className="min-h-[460px] rounded-xl border bg-card p-6">
-          {!plan &&
-          !isPlanning ? (
-            <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-center">
-              <div className="mb-4 flex size-12 items-center justify-center rounded-xl border bg-muted/40">
-                <Bot className="size-5" />
+        <section className="min-w-0 space-y-5">
+          <div className="relative min-h-[430px] overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_20px_60px_rgba(0,0,0,.28)]">
+            <div className="pointer-events-none absolute inset-0 vigil-grid opacity-20" />
+            <div className="relative flex items-center justify-between border-b border-[var(--line)] px-5 py-4">
+              <div>
+                <p className="text-[13.5px] font-extrabold tracking-[-0.02em] text-[var(--ink)]">Execution graph</p>
+                <p className="mt-1 text-[11px] font-medium text-[var(--ink-3)]">Agent tasks stay expandable and traceable as the runtime progresses.</p>
               </div>
-
-              <p className="font-medium">
-                No plan yet
-              </p>
-
-              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Give Vigil an
-                objective and it
-                will build a
-                capability-aware
-                execution plan.
-              </p>
+              {plan ? <Badge variant={plan.executable ? "default" : "destructive"}>{plan.executable ? "Executable" : "Blocked"}</Badge> : null}
             </div>
-          ) : null}
 
-          {isPlanning ? (
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
-              <Loader2 className="size-6 animate-spin" />
+            <div className="relative p-5">
+              {!plan && !isPlanning ? (
+                <div className="flex min-h-[330px] flex-col items-center justify-center text-center">
+                  <div className="mb-4 flex size-12 items-center justify-center rounded-[16px] border border-[var(--line-strong)] bg-gradient-to-br from-[var(--primary-100)] to-[var(--accent-100)] text-[var(--accent-800)] shadow-[0_18px_45px_rgba(72,0,255,.14)]"><Bot className="size-5" /></div>
+                  <p className="text-[14px] font-extrabold text-[var(--ink)]">No execution plan yet</p>
+                  <p className="mt-2 max-w-sm text-[12px] font-medium leading-5 text-[var(--ink-3)]">Describe a goal on the left. Vigil will resolve it against the live agent registry.</p>
+                </div>
+              ) : null}
 
-              <p className="text-sm text-muted-foreground">
-                Gemini is planning
-                the objective...
-              </p>
-            </div>
-          ) : null}
+              {isPlanning ? (
+                <div className="flex min-h-[330px] items-center justify-center"><ThinkingState active /></div>
+              ) : null}
 
-          {plan &&
-          !isPlanning ? (
-            <div className="space-y-6">
-              <div className="flex items-start justify-between gap-4">
+              {plan && !isPlanning ? (
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Execution plan
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-semibold">
-                    {
-                      plan.summary
-                    }
-                  </h2>
-                </div>
-
-                {orchestrationStatus ? (
-                  <Badge
-                    variant={
-                      orchestrationStatus ===
-                        "FAILED" ||
-                      orchestrationStatus ===
-                        "BLOCKED"
-                        ? "destructive"
-                        : orchestrationStatus ===
-                            "SUCCESS"
-                          ? "default"
-                          : "secondary"
-                    }
-                  >
-                    {
-                      orchestrationStatus
-                    }
-                  </Badge>
-                ) : null}
-              </div>
-
-              {orchestrationId ? (
-                <div className="rounded-lg border bg-muted/20 px-4 py-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Orchestration
-                  </p>
-
-                  <p className="mt-1 break-all font-mono text-xs">
-                    {
-                      orchestrationId
-                    }
-                  </p>
+                  <div className="mb-4 rounded-[15px] border border-[var(--line)] bg-[var(--inset)] p-3.5">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink-3)]">Planner summary</p>
+                    <p className="mt-1.5 text-[12.5px] font-semibold leading-5 text-[var(--ink-2)]">{plan.summary}</p>
+                  </div>
+                  <TaskRows plan={plan} orchestration={orchestration} />
                 </div>
               ) : null}
+            </div>
+          </div>
 
-              {plan.executionSteps.length >
-              0 ? (
-                <div className="space-y-3">
+          {plan ? (
+            <div className="grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
+              <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_14px_45px_rgba(0,0,0,.2)]">
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Selected agents
-                    </p>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Capability
-                      requirements
-                      consolidated into
-                      concrete agent
-                      executions.
-                    </p>
+                    <p className="text-[13px] font-extrabold text-[var(--ink)]">Orchestration timeline</p>
+                    <p className="mt-1 text-[10.5px] font-medium text-[var(--ink-3)]">High-level runtime coordination.</p>
                   </div>
-
-                  <div className="space-y-3">
-                    {plan.executionSteps.map(
-                      (
-                        executionStep,
-                        index
-                      ) => {
-                        const runtimeStep =
-                          orchestration
-                            ?.steps.find(
-                              (
-                                step
-                              ) =>
-                                step.agent
-                                  ?.id ===
-                                executionStep
-                                  .agent.id
-                            );
-
-                        return (
-                          <div
-                            key={
-                              executionStep
-                                .agent.id
-                            }
-                            className="rounded-lg border p-4"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {index +
-                                    1}
-                                  .{" "}
-                                  {
-                                    executionStep
-                                      .agent
-                                      .name
-                                  }
-                                </p>
-
-                                <p className="mt-1 font-mono text-xs text-muted-foreground">
-                                  {
-                                    executionStep
-                                      .agent
-                                      .slug
-                                  }
-                                  @
-                                  {
-                                    executionStep
-                                      .agent
-                                      .version
-                                  }
-                                </p>
-                              </div>
-
-                              {runtimeStep ? (
-                                <Badge
-                                  variant={getStepStatusVariant(
-                                    runtimeStep.status
-                                  )}
-                                >
-                                  {runtimeStep.status ===
-                                  "RUNNING" ? (
-                                    <Loader2 className="mr-1 size-3 animate-spin" />
-                                  ) : runtimeStep.status ===
-                                    "SUCCESS" ? (
-                                    <CheckCircle2 className="mr-1 size-3" />
-                                  ) : runtimeStep.status ===
-                                    "FAILED" ? (
-                                    <CircleX className="mr-1 size-3" />
-                                  ) : (
-                                    <Clock3 className="mr-1 size-3" />
-                                  )}
-
-                                  {
-                                    runtimeStep.status
-                                  }
-                                </Badge>
-                              ) : null}
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {executionStep.satisfies.map(
-                                (
-                                  capability
-                                ) => (
-                                  <Badge
-                                    key={
-                                      capability
-                                    }
-                                    variant="outline"
-                                  >
-                                    {
-                                      capability
-                                    }
-                                  </Badge>
-                                )
-                              )}
-                            </div>
-
-                            {runtimeStep?.run ? (
-                              <div className="mt-4 border-t pt-4">
-                                <Link
-                                  href={`/runs/${runtimeStep.run.id}`}
-                                  className={buttonVariants(
-                                    {
-                                      variant:
-                                        "outline",
-
-                                      size:
-                                        "sm",
-                                    }
-                                  )}
-                                >
-                                  Inspect Run
-
-                                  <ExternalLink className="size-3" />
-                                </Link>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Orchestration
-                      timeline
-                    </p>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Decisions and
-                      coordination
-                      performed by
-                      Vigil itself.
-                    </p>
-                  </div>
-
-                  {isStreamConnected ? (
-                    <Badge variant="outline">
-                      <Radio className="mr-1 size-3" />
-                      Live
-                    </Badge>
-                  ) : null}
+                  <Badge variant="outline">{orchestrationEvents.length} events</Badge>
                 </div>
 
-                {(orchestrationEvents ??
-                  []).length >
-                0 ? (
-                  <div className="space-y-2">
-                    {(orchestrationEvents ??
-                      []).map(
-                      (
-                        event
-                      ) => (
-                        <div
-                          key={
-                            event.id
-                          }
-                          className="flex gap-3 rounded-lg border p-3"
-                        >
-                          <div className="mt-1 size-2 shrink-0 rounded-full bg-foreground" />
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-sm font-medium">
-                                {getEventLabel(
-                                  event.type
-                                )}
-                              </p>
-
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(
-                                  event.createdAt
-                                ).toLocaleTimeString()}
-                              </span>
-                            </div>
-
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              {
-                                event.message
-                              }
-                            </p>
-
-                            <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-                              {
-                                event.type
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No orchestration
-                    events recorded
-                    yet.
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Capability
-                  requirements
-                </p>
-
-                {plan.steps.map(
-                  (
-                    step,
-                    index
-                  ) => (
-                    <div
-                      key={`${step.capability}-${index}`}
-                      className="rounded-lg border p-4"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-sm font-medium">
-                          {
-                            step.capability
-                          }
-                        </span>
-
-                        <Badge
-                          variant={
-                            step.required
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {step.required
-                            ? "Required"
-                            : "Optional"}
-                        </Badge>
-                      </div>
-
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {
-                          step.reason
-                        }
-                      </p>
-
-                      <div className="mt-4 space-y-2">
-                        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Registry
-                          matches
-                        </p>
-
-                        {step.candidates.length >
-                        0 ? (
-                          <div className="space-y-2">
-                            {step.candidates.map(
-                              (
-                                agent
-                              ) => (
-                                <div
-                                  key={
-                                    agent.id
-                                  }
-                                  className="flex items-center justify-between rounded-md border bg-muted/20 px-3 py-2"
-                                >
-                                  <div>
-                                    <p className="text-sm font-medium">
-                                      {
-                                        agent.name
-                                      }
-                                    </p>
-
-                                    <p className="font-mono text-xs text-muted-foreground">
-                                      {
-                                        agent.slug
-                                      }
-                                      @
-                                      {
-                                        agent.version
-                                      }
-                                    </p>
-                                  </div>
-
-                                  <CheckCircle2 className="size-4 text-muted-foreground" />
-                                </div>
-                              )
-                            )}
-                          </div>
-                        ) : (
-                          <div className="rounded-md border border-dashed p-3">
-                            <p className="text-sm text-muted-foreground">
-                              No
-                              registered
-                              agent
-                              currently
-                              provides
-                              this
-                              capability.
-                            </p>
-                          </div>
-                        )}
+                <div className="space-y-0">
+                  {orchestrationEvents.length ? orchestrationEvents.map((event, index) => (
+                    <div key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+                      {index < orchestrationEvents.length - 1 ? <span className="absolute left-[6px] top-4 h-[calc(100%-7px)] w-px bg-[var(--line)]" /> : null}
+                      <span className={`relative mt-1 size-3 shrink-0 rounded-full border-[3px] border-[var(--surface)] ${event.type.includes("FAILED") ? "bg-red-400" : event.type.includes("COMPLETED") ? "bg-[var(--accent-700)]" : "bg-[var(--primary-600)]"}`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3"><p className="text-[11.5px] font-extrabold text-[var(--ink)]">{getEventLabel(event.type)}</p><time className="font-mono text-[9px] text-[var(--ink-3)]">{new Date(event.createdAt).toLocaleTimeString()}</time></div>
+                        <p className="mt-1 text-[11px] font-medium leading-4 text-[var(--ink-3)]">{event.message}</p>
                       </div>
                     </div>
-                  )
-                )}
+                  )) : <div className="rounded-[12px] border border-dashed border-[var(--line)] px-4 py-8 text-center text-[11px] font-semibold text-[var(--ink-3)]">Events will appear when the plan is executed.</div>}
+                </div>
               </div>
 
-              {plan.unresolvedCapabilities.length >
-              0 ? (
-                <div className="rounded-lg border border-destructive/30 p-4">
-                  <p className="text-sm font-medium">
-                    Missing required
-                    capabilities
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {plan.unresolvedCapabilities.map(
-                      (
-                        capability
-                      ) => (
-                        <Badge
-                          key={
-                            capability
-                          }
-                          variant="outline"
-                        >
-                          {
-                            capability
-                          }
-                        </Badge>
-                      )
-                    )}
-                  </div>
+              <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_14px_45px_rgba(0,0,0,.2)]">
+                <div className="mb-4">
+                  <p className="text-[13px] font-extrabold text-[var(--ink)]">Capability resolution</p>
+                  <p className="mt-1 text-[10.5px] font-medium text-[var(--ink-3)]">Requested capabilities and registry matches.</p>
                 </div>
-              ) : null}
-
-              {plan.unresolvedOptionalCapabilities.length >
-              0 ? (
-                <div className="rounded-lg border border-dashed p-4">
-                  <p className="text-sm font-medium">
-                    Missing optional
-                    capabilities
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {plan.unresolvedOptionalCapabilities.map(
-                      (
-                        capability
-                      ) => (
-                        <Badge
-                          key={
-                            capability
-                          }
-                          variant="outline"
-                        >
-                          {
-                            capability
-                          }
-                        </Badge>
-                      )
-                    )}
-                  </div>
+                <div className="space-y-2.5">
+                  {plan.steps.map((step, index) => (
+                    <div key={`${step.capability}-${index}`} className="rounded-[13px] border border-[var(--line)] bg-[var(--inset)] p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-mono text-[10.5px] font-semibold text-[var(--primary-800)]">{step.capability}</span><Badge variant={step.required ? "default" : "outline"}>{step.required ? "Required" : "Optional"}</Badge></div>
+                      <p className="mt-2 text-[10.5px] font-medium leading-4 text-[var(--ink-3)]">{step.reason}</p>
+                      <div className="mt-2 flex items-center gap-2 text-[9.5px] font-bold text-[var(--ink-3)]">{step.candidates.length ? <CheckCircle2 className="size-3 text-[var(--accent-800)]" /> : <CircleX className="size-3 text-red-400" />}{step.candidates.length ? `${step.candidates.length} registry match${step.candidates.length === 1 ? "" : "es"}` : "No matching agent"}</div>
+                    </div>
+                  ))}
                 </div>
-              ) : null}
+              </div>
             </div>
           ) : null}
-        </div>
+        </section>
       </div>
     </div>
   );

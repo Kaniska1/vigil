@@ -40,6 +40,25 @@ export type ResolvedPlanStep = {
 };
 
 export type AgentExecutionStep = {
+  /*
+   * Stable graph-local identity.
+   *
+   * Other steps depend on this key instead
+   * of depending directly on database IDs
+   * or array positions.
+   */
+  key: string;
+
+  /*
+   * Graph dependencies expressed using
+   * execution-step keys.
+   *
+   * The persistence layer converts these
+   * into dependsOnPositions for the current
+   * database representation.
+   */
+  dependsOnKeys: string[];
+
   agent: ResolvedAgent;
 
   satisfies:

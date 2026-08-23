@@ -1,12 +1,29 @@
 import prisma from "../lib/prisma.js";
 
 import {
-  runQueue,
-} from "../queue/run.queue.js";
+  setOrchestrationMemoryPhase,
+} from "./orchestration-memory.service.js";
+
+import {
+  scheduleReadyOrchestrationSteps,
+} from "./orchestration-scheduler.service.js";
 
 import {
   traceOrchestration,
 } from "./orchestration-trace.service.js";
+
+type ScheduledRunStep = {
+  id: string;
+
+  runId:
+    | string
+    | null;
+
+  position: number;
+
+  dependsOnPositions:
+    number[];
+};
 
 export async function executeOrchestration(
   userId: string,
@@ -15,21 +32,15 @@ export async function executeOrchestration(
   const orchestration =
     await prisma.orchestrationRun.findFirst({
       where: {
-        id: orchestrationId,
+        id:
+          orchestrationId,
+
         userId,
       },
 
       include: {
-        steps: {
-          orderBy: {
-            position: "asc",
-          },
-
-          include: {
-            agent: true,
-            run: true,
-          },
-        },
+        steps:
+          true,
       },
     });
 
@@ -66,26 +77,28 @@ export async function executeOrchestration(
     );
   }
 
-  const context =
-    orchestration.context &&
-    typeof orchestration.context ===
-      "object" &&
-    !Array.isArray(
-      orchestration.context
-    )
-      ? orchestration.context
-      : {};
-
   await prisma.orchestrationRun.update({
     where: {
-      id: orchestration.id,
+      id:
+        orchestration.id,
     },
 
     data: {
-      status: "RUNNING",
-      startedAt: new Date(),
+      status:
+        "RUNNING",
+
+      startedAt:
+        new Date(),
+
+      completedAt:
+        null,
     },
   });
+
+  await setOrchestrationMemoryPhase(
+    orchestration.id,
+    "EXECUTING"
+  );
 
   await traceOrchestration(
     orchestration.id,
@@ -97,133 +110,74 @@ export async function executeOrchestration(
     }
   );
 
-  const createdRuns: {
-    stepId: string;
-    runId: string;
-  }[] = [];
-
   try {
-    for (
-      const step of
-      orchestration.steps
-    ) {
-      if (!step.agent) {
-        throw new Error(
-          `ORCHESTRATION_STEP_AGENT_MISSING:${step.id}`
-        );
-      }
+    /*
+     * This now schedules only steps whose
+     * dependencies have been satisfied.
+     */
+    await scheduleReadyOrchestrationSteps(
+      orchestration.id
+    );
 
-      const result =
-        await prisma.$transaction(
-          async (tx: { run: { create: (arg0: { data: { userId: string; agentId: any; status: string; }; }) => any; }; orchestrationStep: { update: (arg0: { where: { id: any; }; data: { runId: any; status: string; }; }) => any; }; }) => {
-            const run =
-              await tx.run.create({
-                data: {
-                  userId,
-                  agentId:
-                    step.agent!.id,
-                  status:
-                    "PENDING",
-                },
-              });
+    const latest =
+      await prisma.orchestrationRun.findUnique({
+        where: {
+          id:
+            orchestration.id,
+        },
 
-            await tx.orchestrationStep.update({
-              where: {
-                id: step.id,
-              },
+        include: {
+          steps: {
+            select: {
+              id:
+                true,
 
-              data: {
-                runId:
-                  run.id,
+              runId:
+                true,
 
-                status:
-                  "PENDING",
-              },
-            });
+              position:
+                true,
 
-            return {
-              run,
-            };
-          }
-        );
-
-      createdRuns.push({
-        stepId:
-          step.id,
-
-        runId:
-          result.run.id,
+              dependsOnPositions:
+                true,
+            },
+          },
+        },
       });
 
-      await traceOrchestration(
-        orchestration.id,
-        "AGENT_SELECTED",
-        `${step.agent.name} scheduled for execution`,
-        {
-          stepId:
-            step.id,
+    const scheduledSteps:
+      ScheduledRunStep[] =
+      (latest?.steps ??
+        []) as ScheduledRunStep[];
 
-          runId:
-            result.run.id,
+    /*
+     * flatMap avoids the slightly awkward
+     * type-predicate inference we had before.
+     */
+    const runs =
+      scheduledSteps.flatMap(
+        (
+          step:
+            ScheduledRunStep
+        ) => {
+          if (!step.runId) {
+            return [];
+          }
 
-          agentId:
-            step.agent.id,
+          return [
+            {
+              stepId:
+                step.id,
 
-          agentSlug:
-            step.agent.slug,
+              runId:
+                step.runId,
 
-          satisfies:
-            step.satisfies,
-
-          requiredCapabilities:
-            step.requiredCapabilities,
-
-          optionalCapabilities:
-            step.optionalCapabilities,
+              position:
+                step.position,
+            },
+          ];
         }
       );
-
-      await runQueue.add(
-        "execute-agent-run",
-        {
-          runId:
-            result.run.id,
-
-          slug:
-            step.agent.slug,
-
-          input:
-            context as Record<
-              string,
-              unknown
-            >,
-        },
-        {
-          jobId:
-            result.run.id,
-
-          attempts: 3,
-
-          backoff: {
-            type:
-              "exponential",
-
-            delay:
-              1000,
-          },
-
-          removeOnComplete: {
-            age:
-              60 * 60,
-          },
-
-          removeOnFail: {
-            age:
-              24 * 60 * 60,
-          },
-        }
-      );
-    }
 
     return {
       orchestrationId:
@@ -232,8 +186,7 @@ export async function executeOrchestration(
       status:
         "RUNNING" as const,
 
-      runs:
-        createdRuns,
+      runs,
     };
   } catch (error) {
     await prisma.orchestrationRun.update({
@@ -257,7 +210,8 @@ export async function executeOrchestration(
       "Vigil failed while scheduling orchestration execution",
       {
         error:
-          error instanceof Error
+          error instanceof
+            Error
             ? error.message
             : "Unknown scheduling error",
       }

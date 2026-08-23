@@ -1,5 +1,6 @@
 import {
   GeminiProvider,
+  isGeminiAvailabilityError,
 } from "../llm/gemini.provider.js";
 
 import {
@@ -24,13 +25,6 @@ import type {
   ResolvedPlanStep,
 } from "./orchestrator.types.js";
 
-/*
- * The planner should never be allowed to sit
- * indefinitely waiting for an LLM response.
- *
- * 20 seconds is intentionally generous for
- * this relatively small planning request.
- */
 const PLANNER_TIMEOUT_MS =
   20_000;
 
@@ -39,14 +33,251 @@ const llm =
 
 /*
  * --------------------------------------------------
+ * Deterministic fallback capability rules
+ * --------------------------------------------------
+ *
+ * The fallback NEVER chooses agents.
+ *
+ * Its only responsibility is translating a goal
+ * into Vigil's canonical capability vocabulary.
+ *
+ * Agent resolution remains entirely inside the
+ * registry/resolver below.
+ */
+
+type FallbackCapabilityRule = {
+  capability: string;
+
+  patterns:
+    RegExp[];
+
+  reason: string;
+
+  required:
+    boolean;
+};
+
+const FALLBACK_CAPABILITY_RULES:
+  FallbackCapabilityRule[] = [
+    {
+      capability:
+        "pull-request-analysis",
+
+      patterns: [
+        /\bpull request\b/i,
+        /\bpull-request\b/i,
+        /\bpr\b/i,
+        /\bmerge request\b/i,
+      ],
+
+      reason:
+        "The goal involves inspecting or reasoning about a pull request.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "code-review",
+
+      patterns: [
+        /\bcode review\b/i,
+        /\breview (?:the |this )?code\b/i,
+        /\breview (?:the |this )?(?:pull request|pr)\b/i,
+        /\bquality\b/i,
+        /\bcode quality\b/i,
+        /\breview changes\b/i,
+      ],
+
+      reason:
+        "The goal requests evaluation of source-code quality or changes.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "bug-detection",
+
+      patterns: [
+        /\bbug\b/i,
+        /\bbugs\b/i,
+        /\bdefect\b/i,
+        /\bregression\b/i,
+        /\berror prone\b/i,
+        /\bincorrect behavior\b/i,
+      ],
+
+      reason:
+        "The goal asks Vigil to identify defects or likely regressions.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "security-analysis",
+
+      patterns: [
+        /\bsecurity\b/i,
+        /\bvulnerabilit(?:y|ies)\b/i,
+        /\bauthentication\b/i,
+        /\bauthorization\b/i,
+        /\bauth\b/i,
+        /\binjection\b/i,
+        /\bxss\b/i,
+        /\bssrf\b/i,
+        /\bsecret(?:s)?\b/i,
+        /\baccess control\b/i,
+        /\bprivilege escalation\b/i,
+        /\bsensitive data\b/i,
+      ],
+
+      reason:
+        "The goal asks for security, vulnerability, or access-control analysis.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "test-analysis",
+
+      patterns: [
+        /\btest coverage\b/i,
+        /\bexisting tests\b/i,
+        /\btest quality\b/i,
+        /\banaly[sz]e tests\b/i,
+        /\btesting gaps\b/i,
+      ],
+
+      reason:
+        "The goal requires analysis of the current test suite or test coverage.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "test-generation",
+
+      patterns: [
+        /\bgenerate tests\b/i,
+        /\bcreate tests\b/i,
+        /\bwrite tests\b/i,
+        /\badd tests\b/i,
+        /\bunit tests?\b/i,
+        /\bintegration tests?\b/i,
+      ],
+
+      reason:
+        "The goal explicitly asks Vigil to create or propose tests.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "ci-cd-analysis",
+
+      patterns: [
+        /\bci\/cd\b/i,
+        /\bci cd\b/i,
+        /\bcontinuous integration\b/i,
+        /\bcontinuous deployment\b/i,
+        /\bgithub actions\b/i,
+        /\bpipeline\b/i,
+        /\bworkflow failure\b/i,
+      ],
+
+      reason:
+        "The goal involves CI/CD configuration or pipeline behavior.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "dependency-analysis",
+
+      patterns: [
+        /\bdependenc(?:y|ies)\b/i,
+        /\bpackage(?:s)?\b/i,
+        /\bnpm\b/i,
+        /\bpackage\.json\b/i,
+        /\boutdated librar(?:y|ies)\b/i,
+      ],
+
+      reason:
+        "The goal requires reasoning about project dependencies or packages.",
+
+      required:
+        true,
+    },
+
+    {
+      capability:
+        "documentation-generation",
+
+      patterns: [
+        /\bdocumentation\b/i,
+        /\bdocs\b/i,
+        /\breadme\b/i,
+        /\bdocument this\b/i,
+        /\bgenerate documentation\b/i,
+      ],
+
+      reason:
+        "The goal asks Vigil to create or improve project documentation.",
+
+      required:
+        true,
+    },
+
+    {
+  capability:
+    "api-debugging",
+
+  patterns: [
+    /\bdebug(?:ging)?\s+(?:an?\s+)?api\b/i,
+    /\bapi\s+(?:bug|error|failure|issue|problem)\b/i,
+    /\bapi\s+endpoint\b/i,
+    /\bendpoint\s+(?:bug|error|failure|issue|problem)\b/i,
+    /\bhttp\s+(?:error|failure|issue|status)\b/i,
+    /\brest\s+api\b/i,
+    /\bapi\s+(?:request|response)\b/i,
+    /\b(?:request|response)\s+(?:body|headers?|status code)\b/i,
+    /\b(?:4\d\d|5\d\d)\s+(?:http\s+)?(?:error|response|status)\b/i,
+  ],
+
+  reason:
+    "The goal explicitly involves debugging or reasoning about API behavior.",
+
+  required:
+    true,
+},
+  ];
+
+/*
+ * --------------------------------------------------
  * Timeout helper
  * --------------------------------------------------
  */
 
 async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  message: string
+  promise:
+    Promise<T>,
+  timeoutMs:
+    number,
+  message:
+    string
 ): Promise<T> {
   let timer:
     | ReturnType<
@@ -121,11 +352,6 @@ function stripMarkdownCodeFence(
  * --------------------------------------------------
  * Validate planner output
  * --------------------------------------------------
- *
- * Gemini is allowed to reason about which
- * CAPABILITIES are necessary.
- *
- * It is NOT allowed to invent agents.
  */
 
 function parseGeneratedPlan(
@@ -179,7 +405,7 @@ function parseGeneratedPlan(
 
   if (
     typeof candidate.summary !==
-    "string" ||
+      "string" ||
     !candidate.summary.trim()
   ) {
     throw new Error(
@@ -206,7 +432,8 @@ function parseGeneratedPlan(
         if (
           typeof item !==
             "object" ||
-          item === null ||
+          item ===
+            null ||
           Array.isArray(
             item
           )
@@ -238,13 +465,6 @@ function parseGeneratedPlan(
           );
         }
 
-        /*
-         * Runtime defense.
-         *
-         * Even though Gemini is explicitly told
-         * to use the capability catalog, never
-         * trust model output blindly.
-         */
         if (
           !isKnownCapability(
             capability.capability
@@ -297,30 +517,244 @@ function parseGeneratedPlan(
 
 /*
  * --------------------------------------------------
+ * Deterministic fallback planner
+ * --------------------------------------------------
+ *
+ * This is deliberately NOT an attempt to recreate
+ * Gemini with regexes.
+ *
+ * It exists so known developer tasks can still be
+ * planned when the external planning provider is
+ * temporarily unavailable.
+ */
+
+function buildFallbackSearchText(
+  input: OrchestratorGoalInput
+): string {
+  let contextText =
+    "";
+
+  if (
+    input.context
+  ) {
+    try {
+      contextText =
+        JSON.stringify(
+          input.context
+        );
+    } catch {
+      contextText =
+        "";
+    }
+  }
+
+  return `${
+    input.goal
+  }\n${contextText}`;
+}
+
+function createDeterministicFallbackPlan(
+  input: OrchestratorGoalInput
+):
+  OrchestratorGeneratedPlan |
+  null {
+  const searchText =
+    buildFallbackSearchText(
+      input
+    );
+
+  const capabilityIds =
+    new Set(
+      getCapabilityIds()
+    );
+
+  const selected =
+    new Map<
+      string,
+      {
+        capability:
+          string;
+
+        reason:
+          string;
+
+        required:
+          boolean;
+      }
+    >();
+
+  for (
+    const rule of
+    FALLBACK_CAPABILITY_RULES
+  ) {
+    /*
+     * The capability catalog remains the
+     * authoritative vocabulary.
+     *
+     * If a rule survives in this file after its
+     * capability is removed from the catalog,
+     * silently ignore that stale rule.
+     */
+    if (
+      !capabilityIds.has(
+        rule.capability
+      )
+    ) {
+      continue;
+    }
+
+    const matched =
+      rule.patterns.some(
+        (pattern) =>
+          pattern.test(
+            searchText
+          )
+      );
+
+    if (!matched) {
+      continue;
+    }
+
+    selected.set(
+      rule.capability,
+      {
+        capability:
+          rule.capability,
+
+        reason:
+          rule.reason,
+
+        required:
+          rule.required,
+      }
+    );
+  }
+
+  /*
+   * Repository + pullRequest context is a strong
+   * structural signal even if the user simply says:
+   *
+   * "Review this."
+   */
+  if (
+    input.context &&
+    typeof input.context ===
+      "object"
+  ) {
+    const context =
+      input.context as
+        Record<
+          string,
+          unknown
+        >;
+
+    const repository =
+      context.repository;
+
+    const pullRequest =
+      context.pullRequest;
+
+    if (
+      typeof repository ===
+        "string" &&
+      (
+        typeof pullRequest ===
+          "number" ||
+        typeof pullRequest ===
+          "string"
+      )
+    ) {
+      if (
+        capabilityIds.has(
+          "pull-request-analysis"
+        )
+      ) {
+        selected.set(
+          "pull-request-analysis",
+          {
+            capability:
+              "pull-request-analysis",
+
+            reason:
+              "The supplied context identifies a repository and pull request.",
+
+            required:
+              true,
+          }
+        );
+      }
+
+      /*
+       * In Vigil today, a PR review request generally
+       * implies code review unless the user explicitly
+       * asks for another narrower operation.
+       */
+      if (
+        capabilityIds.has(
+          "code-review"
+        ) &&
+        /\breview\b/i.test(
+          input.goal
+        )
+      ) {
+        selected.set(
+          "code-review",
+          {
+            capability:
+              "code-review",
+
+            reason:
+              "The goal asks to review changes in the supplied pull request.",
+
+            required:
+              true,
+          }
+        );
+      }
+    }
+  }
+
+  const capabilities =
+    [
+      ...selected.values(),
+    ];
+
+  if (
+    capabilities.length ===
+    0
+  ) {
+    return null;
+  }
+
+  return {
+    summary:
+      `Fallback planner identified ${capabilities.length} required capability${
+        capabilities.length ===
+        1
+          ? ""
+          : "ies"
+      } for this goal.`,
+
+    capabilities,
+  };
+}
+
+/*
+ * --------------------------------------------------
  * Deterministic agent selection
  * --------------------------------------------------
  *
- * Gemini determines WHAT capabilities are needed.
+ * Gemini/fallback determines WHAT is needed.
  *
- * Vigil determines WHICH registered agents should
- * satisfy those capabilities.
- *
- * This deliberately keeps agent selection out of
- * the LLM.
- *
- * Example:
- *
- * pull-request-analysis -> GitHub Reviewer
- * code-review           -> GitHub Reviewer
- * bug-detection         -> GitHub Reviewer
- *
- * We should execute GitHub Reviewer once rather
- * than three times.
+ * Vigil determines WHICH registered agents satisfy
+ * those capabilities.
  */
 
 function buildExecutionSteps(
-  steps: ResolvedPlanStep[]
-): AgentExecutionStep[] {
+  steps:
+    ResolvedPlanStep[]
+):
+  AgentExecutionStep[] {
   const uncovered =
     new Set(
       steps
@@ -335,13 +769,6 @@ function buildExecutionSteps(
         )
     );
 
-  /*
-   * Candidate agent ID ->
-   * {
-   *   agent,
-   *   capabilities it could satisfy
-   * }
-   */
   const agentCoverage =
     new Map<
       string,
@@ -440,11 +867,6 @@ function buildExecutionSteps(
         continue;
       }
 
-      /*
-       * Prefer the agent satisfying the
-       * greatest number of still-uncovered
-       * capabilities.
-       */
       if (
         coverage.length >
         best.coverage.length
@@ -457,12 +879,6 @@ function buildExecutionSteps(
         continue;
       }
 
-      /*
-       * Stable deterministic tie-break.
-       *
-       * This means identical registry state
-       * produces identical execution plans.
-       */
       if (
         coverage.length ===
           best.coverage.length &&
@@ -477,11 +893,6 @@ function buildExecutionSteps(
       }
     }
 
-    /*
-     * Normally impossible because `uncovered`
-     * only contains capabilities with candidates,
-     * but prevents an accidental infinite loop.
-     */
     if (!best) {
       break;
     }
@@ -509,16 +920,37 @@ function buildExecutionSteps(
       );
 
     selected.push({
-      agent:
-        best.agent,
+  /*
+   * The registry slug is stable and unique
+   * for this planning pass.
+   *
+   * Later the actual planner can emit richer
+   * graph node IDs without changing the
+   * scheduler or persistence layer.
+   */
+  key:
+    `agent:${best.agent.slug}`,
 
-      satisfies:
-        best.coverage,
+  /*
+   * Capability planning currently produces
+   * one independent wave of agents.
+   *
+   * We deliberately keep that behavior for
+   * now instead of inventing dependencies.
+   */
+  dependsOnKeys:
+    [],
 
-      requiredCapabilities,
+  agent:
+    best.agent,
 
-      optionalCapabilities,
-    });
+  satisfies:
+    best.coverage,
+
+  requiredCapabilities,
+
+  optionalCapabilities,
+});
 
     for (
       const capability of
@@ -529,10 +961,6 @@ function buildExecutionSteps(
       );
     }
 
-    /*
-     * Prevent the same agent from being selected
-     * again during this planning pass.
-     */
     agentCoverage.delete(
       best.agent.id
     );
@@ -548,7 +976,8 @@ function buildExecutionSteps(
  */
 
 export async function createOrchestratorPlan(
-  input: OrchestratorGoalInput
+  input:
+    OrchestratorGoalInput
 ): Promise<OrchestratorPlan> {
   const goal =
     input.goal.trim();
@@ -559,18 +988,6 @@ export async function createOrchestratorPlan(
     );
   }
 
-  /*
-   * Give Gemini the canonical vocabulary.
-   *
-   * This prevents free-form capability strings
-   * such as:
-   *
-   * "pull-request-inspection"
-   *
-   * when Vigil actually understands:
-   *
-   * "pull-request-analysis"
-   */
   const capabilityIds =
     getCapabilityIds();
 
@@ -581,12 +998,6 @@ export async function createOrchestratorPlan(
       input.context
     );
 
-  /*
-   * ------------------------------------------------
-   * LLM planning
-   * ------------------------------------------------
-   */
-
   const plannerStartedAt =
     Date.now();
 
@@ -594,53 +1005,119 @@ export async function createOrchestratorPlan(
     "[Orchestrator] Sending planning request to Gemini..."
   );
 
-  let response;
+  let generatedPlan:
+    OrchestratorGeneratedPlan;
 
   try {
-    response =
-  await withTimeout(
-    llm.generate(
-      {
-        prompt,
-      },
-      {
-        lowLatency: true,
-      }
-    ),
+    /*
+     * Only provider execution sits in this try/catch.
+     *
+     * `parseGeneratedPlan()` happens afterward so
+     * malformed Gemini output is NOT silently hidden
+     * behind the deterministic fallback.
+     */
+    const response =
+      await withTimeout(
+        llm.generate(
+          {
+            prompt,
+          },
+          {
+            lowLatency:
+              true,
+          }
+        ),
 
-    PLANNER_TIMEOUT_MS,
+        PLANNER_TIMEOUT_MS,
 
-    "ORCHESTRATOR_PLANNER_TIMEOUT"
-  );
+        "ORCHESTRATOR_PLANNER_TIMEOUT"
+      );
+
+    const plannerLatencyMs =
+      Date.now() -
+      plannerStartedAt;
+
+    console.log(
+      `[Orchestrator] Gemini planning completed in ${plannerLatencyMs}ms`
+    );
+
+    generatedPlan =
+      parseGeneratedPlan(
+        response.text
+      );
+
+    console.log(
+      "[Orchestrator] Planner source: gemini"
+    );
   } catch (error) {
     const elapsed =
       Date.now() -
       plannerStartedAt;
 
-    console.error(
-      `[Orchestrator] Planning failed after ${elapsed}ms:`,
-      error
+    const providerUnavailable =
+      isGeminiAvailabilityError(
+        error
+      );
+
+    console.warn(
+      `[Orchestrator] Gemini planning failed after ${elapsed}ms`,
+      {
+        providerUnavailable,
+
+        error:
+          error instanceof
+            Error
+            ? error.message
+            : String(
+                error
+              ),
+      }
     );
 
-    throw error;
+    if (
+      !providerUnavailable
+    ) {
+      throw error;
+    }
+
+    const fallbackPlan =
+      createDeterministicFallbackPlan(
+        input
+      );
+
+    /*
+     * We refuse to fabricate a generic plan when
+     * the deterministic planner cannot confidently
+     * map the goal onto the catalog.
+     *
+     * In that case the original provider error is
+     * still the most truthful failure.
+     */
+    if (
+      !fallbackPlan
+    ) {
+      console.warn(
+        "[Orchestrator] Deterministic fallback could not confidently infer capabilities"
+      );
+
+      throw error;
+    }
+
+    generatedPlan =
+  fallbackPlan;
+
+console.log(
+  "[Orchestrator] Fallback capabilities:",
+  fallbackPlan.capabilities.map(
+    (item) =>
+      item.capability
+  )
+);
+
+console.warn(
+  `[Orchestrator] Planner source: deterministic-fallback (${fallbackPlan.capabilities.length} capability/capabilities)`
+);
   }
-
-  const plannerLatencyMs =
-    Date.now() -
-    plannerStartedAt;
-
-  console.log(
-    `[Orchestrator] Gemini planning completed in ${plannerLatencyMs}ms`
-  );
-
-  /*
-   * Gemini only returns the capability-level
-   * reasoning plan here.
-   */
-  const generatedPlan =
-    parseGeneratedPlan(
-      response.text
-    );
 
   /*
    * ------------------------------------------------
@@ -665,7 +1142,7 @@ export async function createOrchestratorPlan(
     const candidates:
       ResolvedAgent[] =
       matches.map(
-        (agent: { id: any; slug: any; name: any; version: any; capabilities: any; }) => ({
+        (agent) => ({
           id:
             agent.id,
 
@@ -697,10 +1174,6 @@ export async function createOrchestratorPlan(
     });
   }
 
-  /*
-   * Required capabilities that have no
-   * registered implementation block execution.
-   */
   const unresolvedCapabilities =
     resolvedSteps
       .filter(
@@ -714,11 +1187,6 @@ export async function createOrchestratorPlan(
           step.capability
       );
 
-  /*
-   * Optional missing capabilities are visible
-   * to the user/debugger but do not prevent
-   * execution.
-   */
   const unresolvedOptionalCapabilities =
     resolvedSteps
       .filter(
@@ -732,11 +1200,6 @@ export async function createOrchestratorPlan(
           step.capability
       );
 
-  /*
-   * Consolidate capability matches into the
-   * smallest sensible set of concrete agent
-   * executions.
-   */
   const executionSteps =
     buildExecutionSteps(
       resolvedSteps
@@ -744,9 +1207,9 @@ export async function createOrchestratorPlan(
 
   const executable =
     unresolvedCapabilities.length ===
-    0 &&
+      0 &&
     executionSteps.length >
-    0;
+      0;
 
   console.log(
     `[Orchestrator] Plan resolved: ${executionSteps.length} agent(s), ${unresolvedCapabilities.length} missing required capability/capabilities`

@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "../api/src/orchestrator/orchestration-memory.service.ts", "../api/src/orchestrator/orchestration-memory.types.ts"  ],
   "exclude": ["node_modules"]
 }

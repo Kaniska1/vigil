@@ -17,9 +17,9 @@ import {
 } from "./agent-registry.service.js";
 
 import {
+  markOrchestrationStepFailed,
   markOrchestrationStepRunning,
   markOrchestrationStepSuccess,
-  markOrchestrationStepFailed,
 } from "../orchestrator/orchestration-state.service.js";
 
 export async function createAgentRun(
@@ -27,7 +27,9 @@ export async function createAgentRun(
   userId: string
 ) {
   const agentRecord =
-  await findAgentBySlug(slug);
+    await findAgentBySlug(
+      slug
+    );
 
   if (!agentRecord) {
     throw new Error(
@@ -36,9 +38,9 @@ export async function createAgentRun(
   }
 
   const agentImplementation =
-  await getAgentImplementation(
-    slug
-  );
+    await getAgentImplementation(
+      slug
+    );
 
   if (!agentImplementation) {
     throw new Error(
@@ -70,7 +72,9 @@ export async function executeAgentRun(
   input: AgentInput
 ) {
   const agentRecord =
-  await findAgentBySlug(slug);
+    await findAgentBySlug(
+      slug
+    );
 
   if (!agentRecord) {
     throw new Error(
@@ -79,9 +83,9 @@ export async function executeAgentRun(
   }
 
   const agentImplementation =
-  await getAgentImplementation(
-    slug
-  );
+    await getAgentImplementation(
+      slug
+    );
 
   if (!agentImplementation) {
     throw new Error(
@@ -95,29 +99,54 @@ export async function executeAgentRun(
     );
 
   /*
-   * Do NOT mark the run FAILED in this function.
+   * A logical Run may span multiple BullMQ attempts.
    *
-   * BullMQ may retry this execution.
+   * Therefore this function does NOT decide whether
+   * an execution exception means permanent failure.
    *
-   * The worker decides whether an error belongs
-   * to a retryable attempt or the final attempt.
+   * That decision belongs to the worker because the
+   * worker knows:
+   *
+   * - current attempt
+   * - maximum attempts
+   * - whether an error is unrecoverable
    */
   await prisma.run.update({
     where: {
-      id: runId,
+      id:
+        runId,
     },
 
     data: {
       status:
         "RUNNING",
 
+      /*
+       * Preserve the original start time when BullMQ
+       * retries the same logical Run.
+       */
       startedAt:
+        (
+          await prisma.run.findUnique({
+            where: {
+              id:
+                runId,
+            },
+
+            select: {
+              startedAt:
+                true,
+            },
+          })
+        )?.startedAt ??
         new Date(),
     },
   });
+
   await markOrchestrationStepRunning(
-  runId
-);
+    runId
+  );
+
   await context.trace(
     "RUN_STARTED",
     `${agentRecord.name} execution started`
@@ -135,16 +164,16 @@ export async function executeAgentRun(
     );
 
   /*
-   * Persist the result before broadcasting
-   * RUN_COMPLETED.
+   * Persist final result BEFORE publishing the
+   * terminal RUN_COMPLETED event.
    *
-   * That guarantees that when the frontend
-   * receives the terminal event and fetches
-   * the run, the final result already exists.
+   * This guarantees that the frontend can fetch the
+   * final result immediately after receiving SSE.
    */
   await prisma.run.update({
     where: {
-      id: runId,
+      id:
+        runId,
     },
 
     data: {
@@ -167,9 +196,11 @@ export async function executeAgentRun(
     "RUN_COMPLETED",
     `${agentRecord.name} execution completed`
   );
+
   await markOrchestrationStepSuccess(
-  runId
-);
+    runId
+  );
+
   return result;
 }
 
@@ -189,18 +220,57 @@ export async function failAgentRun(
   const message =
     error instanceof Error
       ? error.message
-      : "Unknown execution error";
+      : typeof error ===
+          "string"
+        ? error
+        : "Unknown execution error";
 
   /*
-   * Set FAILED before publishing ERROR.
+   * Avoid publishing duplicate terminal events if
+   * the failure handler somehow gets invoked twice.
+   */
+  const existingRun =
+    await prisma.run.findUnique({
+      where: {
+        id:
+          runId,
+      },
+
+      select: {
+        status:
+          true,
+
+        completedAt:
+          true,
+      },
+    });
+
+  if (!existingRun) {
+    console.warn(
+      `[Run Service] Cannot fail missing run ${runId}`
+    );
+
+    return;
+  }
+
+  if (
+    existingRun.status ===
+      "FAILED" &&
+    existingRun.completedAt
+  ) {
+    return;
+  }
+
+  /*
+   * ERROR is terminal for the run SSE stream.
    *
-   * ERROR is considered a terminal event by
-   * the SSE layer, so the database must already
-   * reflect the final state.
+   * Therefore the durable database state must be
+   * updated BEFORE publishing the event.
    */
   await prisma.run.update({
     where: {
-      id: runId,
+      id:
+        runId,
     },
 
     data: {
@@ -222,7 +292,16 @@ export async function failAgentRun(
       ...metadata,
     }
   );
+
+  /*
+   * This transitions the attached orchestration step
+   * to FAILED and allows the parent orchestration
+   * state service to transition the parent to FAILED.
+   *
+   * Normal standalone agent runs simply have no
+   * orchestration step and are safely ignored there.
+   */
   await markOrchestrationStepFailed(
-  runId
-);
+    runId
+  );
 }

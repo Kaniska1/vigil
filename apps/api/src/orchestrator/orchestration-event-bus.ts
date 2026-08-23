@@ -1,4 +1,8 @@
-import { Redis } from "ioredis";
+import "dotenv/config";
+
+import {
+  Redis,
+} from "ioredis";
 
 import type {
   OrchestrationEvent,
@@ -9,31 +13,32 @@ const redisUrl =
   "redis://127.0.0.1:6379";
 
 /*
- * For event publishing we deliberately disable
- * the offline queue.
+ * PostgreSQL is our durable event store.
  *
- * Why?
- *
- * PostgreSQL is the durable source of truth.
- * Redis is only responsible for live delivery.
- *
- * If Redis is unavailable, we would rather
- * fail the live publish immediately than make
- * plan creation hang indefinitely.
+ * Redis only provides real-time delivery,
+ * so publishing must not hold the entire
+ * orchestration hostage when Redis is down.
  */
 const publisher =
-  new Redis(redisUrl, {
-    enableOfflineQueue: false,
+  new Redis(
+    redisUrl,
+    {
+      enableOfflineQueue:
+        false,
 
-    maxRetriesPerRequest: 1,
+      maxRetriesPerRequest:
+        1,
 
-    retryStrategy(times) {
-      return Math.min(
-        times * 500,
-        3000
-      );
-    },
-  });
+      retryStrategy(
+        times
+      ) {
+        return Math.min(
+          times * 500,
+          3000
+        );
+      },
+    }
+  );
 
 publisher.on(
   "connect",
@@ -80,24 +85,26 @@ export async function subscribeToOrchestration(
   ) => void
 ) {
   /*
-   * Redis Pub/Sub requires a dedicated
-   * subscriber connection.
-   *
-   * Once a Redis connection enters subscriber
-   * mode, it shouldn't be reused for ordinary
-   * Redis commands.
+   * Pub/Sub subscribers must use their
+   * own Redis connection.
    */
   const subscriber =
-    new Redis(redisUrl, {
-      maxRetriesPerRequest: null,
+    new Redis(
+      redisUrl,
+      {
+        maxRetriesPerRequest:
+          null,
 
-      retryStrategy(times) {
-        return Math.min(
-          times * 500,
-          3000
-        );
-      },
-    });
+        retryStrategy(
+          times
+        ) {
+          return Math.min(
+            times * 500,
+            3000
+          );
+        },
+      }
+    );
 
   const channel =
     getChannel(

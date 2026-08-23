@@ -329,9 +329,9 @@ export function RunDebugger({
     llmMetadata?.usage;
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10">
-        <header className="space-y-5">
+    <div>
+      <div className="flex flex-col gap-6">
+        <header className="space-y-5 border-b border-[#333333] pb-6">
           <Link
             href="/runs"
             className={cn(
@@ -374,7 +374,7 @@ export function RunDebugger({
               </div>
 
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight">
+                <h1 className="text-gradient text-3xl font-extrabold tracking-[-0.045em]">
                   Run Debugger
                 </h1>
 
@@ -686,6 +686,6 @@ export function RunDebugger({
 
         <Separator />
       </div>
-    </main>
+    </div>
   );
 }

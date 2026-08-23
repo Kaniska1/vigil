@@ -1,6 +1,12 @@
-import Redis from "ioredis";
+import "dotenv/config";
 
-import type { TraceEvent } from "@vigil/db";
+import {
+  Redis,
+} from "ioredis";
+
+import type {
+  TraceEvent,
+} from "@vigil/db";
 
 const redisUrl =
   process.env.REDIS_URL ??
@@ -8,6 +14,16 @@ const redisUrl =
 
 const publisher =
   new Redis(redisUrl);
+
+publisher.on(
+  "error",
+  (error) => {
+    console.error(
+      "[Run PubSub] Publisher error:",
+      error
+    );
+  }
+);
 
 function getRunChannel(
   runId: string
@@ -18,12 +34,13 @@ function getRunChannel(
 export async function publishRunEvent(
   event: TraceEvent
 ) {
-  const channel =
-    getRunChannel(event.runId);
-
   await publisher.publish(
-    channel,
-    JSON.stringify(event)
+    getRunChannel(
+      event.runId
+    ),
+    JSON.stringify(
+      event
+    )
   );
 }
 
@@ -34,17 +51,26 @@ export async function subscribeToRun(
   ) => void
 ) {
   /*
-   * Redis connections that enter subscriber mode
-   * cannot be reused for ordinary commands.
-   *
-   * For the MVP, each active SSE connection gets
-   * its own Redis subscriber connection.
+   * Redis Pub/Sub requires a dedicated
+   * subscriber connection.
    */
   const subscriber =
     new Redis(redisUrl);
 
   const channel =
-    getRunChannel(runId);
+    getRunChannel(
+      runId
+    );
+
+  subscriber.on(
+    "error",
+    (error) => {
+      console.error(
+        "[Run PubSub] Subscriber error:",
+        error
+      );
+    }
+  );
 
   const handleMessage = (
     receivedChannel: string,
@@ -62,10 +88,12 @@ export async function subscribeToRun(
           message
         ) as TraceEvent;
 
-      callback(event);
+      callback(
+        event
+      );
     } catch (error) {
       console.error(
-        "Failed to parse Redis run event:",
+        "[Run PubSub] Failed to parse event:",
         error
       );
     }

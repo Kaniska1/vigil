@@ -236,6 +236,10 @@ export type OrchestrationStepDetails = {
 
   position: number;
 
+  dependsOnPositions: number[];
+
+  input?: Record<string, unknown> | null;
+
   status: OrchestrationStepStatus;
 
   satisfies: string[];
