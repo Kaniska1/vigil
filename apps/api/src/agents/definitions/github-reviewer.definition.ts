@@ -9,36 +9,60 @@ import {
 const githubReviewerDefinition:
   AgentDefinition = {
   metadata: {
-    slug:
-      "github-reviewer",
+  slug:
+    "github-reviewer",
 
-    name:
-      "GitHub Reviewer",
+  name:
+    "GitHub Reviewer",
 
-    description:
-      "Reviews GitHub pull requests using PR metadata and changed-file diffs to identify bugs, risks, and code-quality issues.",
+  description:
+    "Reviews GitHub pull requests and returns structured feedback.",
 
-    version:
-      "1.0.0",
+  version:
+    "1.0.0",
 
-    capabilities: [
-      "code-review",
-      "bug-detection",
-      "pull-request-analysis",
-    ],
+  capabilities: [
+    "pull-request-review",
+  ],
 
-    tools: [
-      "github.getPullRequest",
-      "github.getPullRequestFiles",
-    ],
+  tools: [
+    "github",
+  ],
 
-    permissions: [
-      "github.read",
-    ],
+  permissions: [
+    "repository:read",
+    "pull_requests:read",
+  ],
 
-    category:
-      "developer-tools",
+  // ...
+
+  inputSchema: {
+    repository: {
+      type: "string",
+      description:
+        "GitHub repository in owner/repository format.",
+      required: true,
+    },
+
+    pullRequest: {
+      type: "number",
+      description:
+        "Pull request number to review.",
+      required: true,
+    },
   },
+
+  outputSchema: {
+    review: {
+      type: "json",
+      description:
+        "Structured pull request review result.",
+    },
+  },
+
+  category:
+    "developer-tools",
+},
 
   implementation:
     githubReviewerAgent,

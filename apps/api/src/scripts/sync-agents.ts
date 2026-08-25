@@ -1,8 +1,20 @@
+import type {
+  Prisma,
+} from "@vigil/db";
+
 import prisma from "../lib/prisma.js";
 
 import {
   getAgentDefinitions,
 } from "../agents/agent.registry.js";
+
+function toJsonValue(
+  value: unknown
+): Prisma.InputJsonValue {
+  return JSON.parse(
+    JSON.stringify(value)
+  ) as Prisma.InputJsonValue;
+}
 
 async function syncBuiltInAgents() {
   const definitions =
@@ -19,6 +31,20 @@ async function syncBuiltInAgents() {
     const {
       metadata,
     } = definition;
+
+    const inputSchema =
+      metadata.inputSchema
+        ? toJsonValue(
+            metadata.inputSchema
+          )
+        : undefined;
+
+    const outputSchema =
+      metadata.outputSchema
+        ? toJsonValue(
+            metadata.outputSchema
+          )
+        : undefined;
 
     await prisma.agent.upsert({
       where: {
@@ -48,6 +74,18 @@ async function syncBuiltInAgents() {
         category:
           metadata.category,
 
+        ...(inputSchema
+          ? {
+              inputSchema,
+            }
+          : {}),
+
+        ...(outputSchema
+          ? {
+              outputSchema,
+            }
+          : {}),
+
         isActive:
           true,
       },
@@ -76,6 +114,18 @@ async function syncBuiltInAgents() {
 
         category:
           metadata.category,
+
+        ...(inputSchema
+          ? {
+              inputSchema,
+            }
+          : {}),
+
+        ...(outputSchema
+          ? {
+              outputSchema,
+            }
+          : {}),
 
         isActive:
           true,

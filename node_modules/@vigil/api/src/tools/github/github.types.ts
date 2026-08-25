@@ -27,3 +27,16 @@ export type PullRequestFile = {
   changes: number;
   patch?: string;
 };
+
+export type CreatePullRequestReviewInput = {
+  owner: string;
+  repo: string;
+  pullNumber: number;
+  body: string;
+};
+
+export type PullRequestReviewData = {
+  id: number;
+  state: string;
+  htmlUrl: string | null;
+};

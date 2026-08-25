@@ -133,6 +133,29 @@ export type OrchestratorExecutionStep = {
   optionalCapabilities: string[];
 };
 
+export type MissingOrchestrationInput = {
+  key: string;
+
+  type:
+    | "string"
+    | "number"
+    | "boolean"
+    | "json"
+    | "file";
+
+  description: string;
+
+  acceptedFileTypes?: string[];
+
+  maxFileSizeBytes?: number;
+
+  requiredBy: {
+    agentId: string;
+    agentSlug: string;
+    agentName: string;
+  }[];
+};
+
 export type OrchestratorPlan = {
   goal: string;
 
@@ -161,6 +184,12 @@ export type OrchestratorPlan = {
    * Missing optional capabilities.
    */
   unresolvedOptionalCapabilities: string[];
+
+  /*
+   * Required runtime inputs that are missing
+   * for the selected concrete agents.
+   */
+  missingInputs: MissingOrchestrationInput[];
 };
 
 export type CreateOrchestratorPlanInput = {

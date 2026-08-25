@@ -1,26 +1,35 @@
 import type { VigilTool } from "../tool.types.js";
+
+import {
+  githubFetch,
+} from "./github-client.js";
+
 import type {
   GetPullRequestInput,
   PullRequestData,
 } from "./github.types.js";
 
 export class GetPullRequestTool
-  implements VigilTool<GetPullRequestInput, PullRequestData>
+  implements VigilTool<
+    GetPullRequestInput,
+    PullRequestData
+  >
 {
   name = "github.getPullRequest";
 
-  async execute(input: GetPullRequestInput) {
-    const { owner, repo, pullNumber } = input;
+  async execute(
+    input: GetPullRequestInput
+  ) {
+    const {
+      owner,
+      repo,
+      pullNumber,
+    } = input;
 
-    const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "User-Agent": "Vigil-Agent-Platform",
-        },
-      }
-    );
+    const response =
+      await githubFetch(
+        `/repos/${owner}/${repo}/pulls/${pullNumber}`
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -28,16 +37,29 @@ export class GetPullRequestTool
       );
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     return {
       data: {
-        title: data.title,
-        body: data.body,
-        state: data.state,
-        author: data.user?.login ?? "unknown",
-        baseBranch: data.base?.ref ?? "",
-        headBranch: data.head?.ref ?? "",
+        title:
+          data.title,
+
+        body:
+          data.body,
+
+        state:
+          data.state,
+
+        author:
+          data.user?.login ??
+          "unknown",
+
+        baseBranch:
+          data.base?.ref ?? "",
+
+        headBranch:
+          data.head?.ref ?? "",
       },
     };
   }

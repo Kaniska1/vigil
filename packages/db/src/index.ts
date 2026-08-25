@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "../generated/prisma/client.ts";
 
 const connectionString =
   process.env.DATABASE_URL;
@@ -49,6 +49,6 @@ export type {
   OrchestrationStep,
   OrchestrationEvent,
   OrchestrationEventType,
-} from "../generated/prisma/client";
+} from "../generated/prisma/client.ts";
 
 export default prisma;

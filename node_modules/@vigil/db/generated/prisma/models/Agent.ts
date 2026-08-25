@@ -57,6 +57,8 @@ export type AgentCountAggregateOutputType = {
   capabilities: number
   tools: number
   permissions: number
+  inputSchema: number
+  outputSchema: number
   category: number
   isActive: number
   createdAt: number
@@ -98,6 +100,8 @@ export type AgentCountAggregateInputType = {
   capabilities?: true
   tools?: true
   permissions?: true
+  inputSchema?: true
+  outputSchema?: true
   category?: true
   isActive?: true
   createdAt?: true
@@ -186,6 +190,8 @@ export type AgentGroupByOutputType = {
   capabilities: string[]
   tools: string[]
   permissions: string[]
+  inputSchema: runtime.JsonValue | null
+  outputSchema: runtime.JsonValue | null
   category: string | null
   isActive: boolean
   createdAt: Date
@@ -222,6 +228,8 @@ export type AgentWhereInput = {
   capabilities?: Prisma.StringNullableListFilter<"Agent">
   tools?: Prisma.StringNullableListFilter<"Agent">
   permissions?: Prisma.StringNullableListFilter<"Agent">
+  inputSchema?: Prisma.JsonNullableFilter<"Agent">
+  outputSchema?: Prisma.JsonNullableFilter<"Agent">
   category?: Prisma.StringNullableFilter<"Agent"> | string | null
   isActive?: Prisma.BoolFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
@@ -239,6 +247,8 @@ export type AgentOrderByWithRelationInput = {
   capabilities?: Prisma.SortOrder
   tools?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
+  inputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
+  outputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -259,6 +269,8 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<{
   capabilities?: Prisma.StringNullableListFilter<"Agent">
   tools?: Prisma.StringNullableListFilter<"Agent">
   permissions?: Prisma.StringNullableListFilter<"Agent">
+  inputSchema?: Prisma.JsonNullableFilter<"Agent">
+  outputSchema?: Prisma.JsonNullableFilter<"Agent">
   category?: Prisma.StringNullableFilter<"Agent"> | string | null
   isActive?: Prisma.BoolFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
@@ -276,6 +288,8 @@ export type AgentOrderByWithAggregationInput = {
   capabilities?: Prisma.SortOrder
   tools?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
+  inputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
+  outputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -297,6 +311,8 @@ export type AgentScalarWhereWithAggregatesInput = {
   capabilities?: Prisma.StringNullableListFilter<"Agent">
   tools?: Prisma.StringNullableListFilter<"Agent">
   permissions?: Prisma.StringNullableListFilter<"Agent">
+  inputSchema?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
+  outputSchema?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
   category?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
@@ -312,6 +328,8 @@ export type AgentCreateInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -329,6 +347,8 @@ export type AgentUncheckedCreateInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -346,6 +366,8 @@ export type AgentUpdateInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -363,6 +385,8 @@ export type AgentUncheckedUpdateInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -380,6 +404,8 @@ export type AgentCreateManyInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -395,6 +421,8 @@ export type AgentUpdateManyMutationInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -410,6 +438,8 @@ export type AgentUncheckedUpdateManyInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -433,6 +463,8 @@ export type AgentCountOrderByAggregateInput = {
   capabilities?: Prisma.SortOrder
   tools?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
+  inputSchema?: Prisma.SortOrder
+  outputSchema?: Prisma.SortOrder
   category?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -543,6 +575,8 @@ export type AgentCreateWithoutRunsInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -559,6 +593,8 @@ export type AgentUncheckedCreateWithoutRunsInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -591,6 +627,8 @@ export type AgentUpdateWithoutRunsInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -607,6 +645,8 @@ export type AgentUncheckedUpdateWithoutRunsInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -623,6 +663,8 @@ export type AgentCreateWithoutOrchestrationStepsInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -639,6 +681,8 @@ export type AgentUncheckedCreateWithoutOrchestrationStepsInput = {
   capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
   tools?: Prisma.AgentCreatetoolsInput | string[]
   permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -671,6 +715,8 @@ export type AgentUpdateWithoutOrchestrationStepsInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -687,6 +733,8 @@ export type AgentUncheckedUpdateWithoutOrchestrationStepsInput = {
   capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
   tools?: Prisma.AgentUpdatetoolsInput | string[]
   permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -743,6 +791,8 @@ export type AgentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   capabilities?: boolean
   tools?: boolean
   permissions?: boolean
+  inputSchema?: boolean
+  outputSchema?: boolean
   category?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -761,6 +811,8 @@ export type AgentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   capabilities?: boolean
   tools?: boolean
   permissions?: boolean
+  inputSchema?: boolean
+  outputSchema?: boolean
   category?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -776,6 +828,8 @@ export type AgentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   capabilities?: boolean
   tools?: boolean
   permissions?: boolean
+  inputSchema?: boolean
+  outputSchema?: boolean
   category?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -791,13 +845,15 @@ export type AgentSelectScalar = {
   capabilities?: boolean
   tools?: boolean
   permissions?: boolean
+  inputSchema?: boolean
+  outputSchema?: boolean
   category?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "description" | "version" | "capabilities" | "tools" | "permissions" | "category" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
+export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "description" | "version" | "capabilities" | "tools" | "permissions" | "inputSchema" | "outputSchema" | "category" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
 export type AgentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   runs?: boolean | Prisma.Agent$runsArgs<ExtArgs>
   orchestrationSteps?: boolean | Prisma.Agent$orchestrationStepsArgs<ExtArgs>
@@ -821,6 +877,8 @@ export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     capabilities: string[]
     tools: string[]
     permissions: string[]
+    inputSchema: runtime.JsonValue | null
+    outputSchema: runtime.JsonValue | null
     category: string | null
     isActive: boolean
     createdAt: Date
@@ -1258,6 +1316,8 @@ export interface AgentFieldRefs {
   readonly capabilities: Prisma.FieldRef<"Agent", 'String[]'>
   readonly tools: Prisma.FieldRef<"Agent", 'String[]'>
   readonly permissions: Prisma.FieldRef<"Agent", 'String[]'>
+  readonly inputSchema: Prisma.FieldRef<"Agent", 'Json'>
+  readonly outputSchema: Prisma.FieldRef<"Agent", 'Json'>
   readonly category: Prisma.FieldRef<"Agent", 'String'>
   readonly isActive: Prisma.FieldRef<"Agent", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Agent", 'DateTime'>

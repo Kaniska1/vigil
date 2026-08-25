@@ -94,9 +94,10 @@ export async function executeAgentRun(
   }
 
   const context =
-    createExecutionContext(
-      runId
-    );
+  createExecutionContext(
+    runId,
+    agentRecord.permissions
+  );
 
   /*
    * A logical Run may span multiple BullMQ attempts.

@@ -1264,6 +1264,8 @@ export const AgentScalarFieldEnum = {
   capabilities: 'capabilities',
   tools: 'tools',
   permissions: 'permissions',
+  inputSchema: 'inputSchema',
+  outputSchema: 'outputSchema',
   category: 'category',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -1306,6 +1308,7 @@ export const OrchestrationRunScalarFieldEnum = {
   summary: 'summary',
   plan: 'plan',
   context: 'context',
+  result: 'result',
   state: 'state',
   stateVersion: 'stateVersion',
   unresolvedCapabilities: 'unresolvedCapabilities',
@@ -1322,7 +1325,9 @@ export type OrchestrationRunScalarFieldEnum = (typeof OrchestrationRunScalarFiel
 export const OrchestrationStepScalarFieldEnum = {
   id: 'id',
   orchestrationId: 'orchestrationId',
+  kind: 'kind',
   agentId: 'agentId',
+  actionName: 'actionName',
   runId: 'runId',
   position: 'position',
   iteration: 'iteration',
@@ -1332,6 +1337,8 @@ export const OrchestrationStepScalarFieldEnum = {
   requiredCapabilities: 'requiredCapabilities',
   optionalCapabilities: 'optionalCapabilities',
   input: 'input',
+  result: 'result',
+  error: 'error',
   createdAt: 'createdAt',
   startedAt: 'startedAt',
   completedAt: 'completedAt'
@@ -1442,6 +1449,20 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
  * Reference to a field of type 'Boolean'
  */
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
@@ -1459,20 +1480,6 @@ export type EnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
  * Reference to a field of type 'RunStatus[]'
  */
 export type ListEnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RunStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-/**
- * Reference to a field of type 'QueryMode'
- */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1501,6 +1508,20 @@ export type EnumOrchestrationStatusFieldRefInput<$PrismaModel> = FieldRefInputTy
  * Reference to a field of type 'OrchestrationStatus[]'
  */
 export type ListEnumOrchestrationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrchestrationStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'OrchestrationStepKind'
+ */
+export type EnumOrchestrationStepKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrchestrationStepKind'>
+    
+
+
+/**
+ * Reference to a field of type 'OrchestrationStepKind[]'
+ */
+export type ListEnumOrchestrationStepKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrchestrationStepKind[]'>
     
 
 

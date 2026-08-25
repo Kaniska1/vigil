@@ -2,6 +2,7 @@ import prisma from "../lib/prisma.js";
 
 import {
   getOrchestrationMemory,
+  recordOrchestrationDecision,
 } from "./orchestration-memory.service.js";
 
 import {
@@ -45,14 +46,16 @@ function getLatestReplanReason(
   }
 
   /*
-   * The evaluation that requested replanning
-   * is the canonical reason for resuming it.
+   * Prefer the persisted evaluator decision that
+   * actually requested replanning.
    */
   const evaluation =
     [...memory.evaluations]
       .reverse()
       .find(
-        (item) =>
+        (
+          item
+        ) =>
           item.shouldReplan
       );
 
@@ -61,8 +64,8 @@ function getLatestReplanReason(
   }
 
   /*
-   * Fallback for the narrow case where a
-   * replan record exists but evaluation
+   * Fallback for an orchestration that recorded
+   * the replan transition but whose evaluator
    * history is unavailable.
    */
   const replan =
@@ -82,24 +85,19 @@ async function recoverRunningOrchestration(
     string
 ): Promise<void> {
   /*
-   * BullMQ already persists jobs in Redis.
+   * BullMQ owns already-created jobs.
    *
-   * We do NOT recreate Runs or requeue steps
-   * that already have runIds here.
-   *
-   * The scheduler only claims still-pending,
-   * unscheduled graph nodes.
+   * The scheduler will only claim PENDING graph
+   * nodes that do not already have a runId.
    */
   await scheduleReadyOrchestrationSteps(
     orchestrationId
   );
 
   /*
-   * The orchestration may have died after the
-   * final worker state mutation but before the
-   * evaluation boundary was entered.
-   *
-   * Re-check whether execution has settled.
+   * The process may have died after the final
+   * execution state update but before entering
+   * evaluation.
    */
   await evaluateIfExecutionSettled(
     orchestrationId
@@ -128,11 +126,7 @@ async function recoverReplanningOrchestration(
 
   if (!reason) {
     /*
-     * REPLANNING without a persisted reason is
-     * not safe to guess about.
-     *
-     * Leave it visible rather than fabricating
-     * planner context.
+     * Never fabricate reasoning during recovery.
      */
     throw new Error(
       "ORCHESTRATION_REPLAN_REASON_MISSING"
@@ -140,11 +134,12 @@ async function recoverReplanningOrchestration(
   }
 
   /*
-   * This may make an LLM call, but only because
-   * the orchestration was already in the middle
-   * of a requested replan before the restart.
+   * This may invoke the planner because the
+   * orchestration had already reached REPLANNING
+   * before the worker died.
    *
-   * A normal restart does not trigger planning.
+   * Normal startup alone does not trigger an
+   * additional planner request.
    */
   await replanOrchestration(
     orchestrationId,
@@ -203,15 +198,15 @@ export async function recoverInFlightOrchestrations(): Promise<void> {
       },
 
       select: {
-  id:
-    true,
+        id:
+          true,
 
-  status:
-    true,
+        status:
+          true,
 
-  state:
-    true,
-},
+        state:
+          true,
+      },
 
       orderBy: {
         updatedAt:
@@ -239,41 +234,75 @@ export async function recoverInFlightOrchestrations(): Promise<void> {
   );
 
   /*
-   * Sequential recovery is intentional.
-   *
-   * Startup recovery is rare, and doing this
-   * sequentially avoids creating a sudden burst
-   * of planner/queue/database work after restart.
+   * Sequential recovery avoids producing a burst
+   * of queue/planner/database work immediately
+   * after the worker starts.
    */
   for (
-  const orchestration of
-  recoverable
-) {
-  if (
-    orchestration.state ===
-    null
+    const orchestration of
+    recoverable
   ) {
-    console.warn(
-      `[Orchestration Recovery] Skipping legacy orchestration ${orchestration.id}: persistent memory is not initialized`
-    );
+    /*
+     * Pre-memory orchestrations cannot be safely
+     * reconstructed.
+     *
+     * Skip rather than inventing state.
+     */
+    if (
+      orchestration.state ===
+      null
+    ) {
+      console.warn(
+        `[Orchestration Recovery] Skipping legacy orchestration ${orchestration.id}: persistent memory is not initialized`
+      );
 
-    continue;
-  }
+      continue;
+    }
 
-  try {
-    await recoverOne(
-      orchestration
-    );
+    try {
+      /*
+       * Record the fact that Vigil chose to resume
+       * this orchestration after process restart.
+       */
+      await recordOrchestrationDecision({
+        orchestrationId:
+          orchestration.id,
 
-    console.log(
-      `[Orchestration Recovery] Recovered ${orchestration.id}`
-    );
-  } catch (
-    error
-  ) {
-    console.error(
-      `[Orchestration Recovery] Failed to recover ${orchestration.id}`,
+        type:
+          "RECOVERY_RESUMED",
+
+        reason:
+          `Worker restart found orchestration in ${orchestration.status} state.`,
+
+        metadata: {
+          recoveredFrom:
+            orchestration.status,
+        },
+      });
+
+      await recoverOne(
+        orchestration
+      );
+
+      console.log(
+        `[Orchestration Recovery] Recovered ${orchestration.id}`
+      );
+    } catch (
       error
-    );
+    ) {
+      console.error(
+        `[Orchestration Recovery] Failed to recover ${orchestration.id}`,
+        error
+      );
+
+      /*
+       * A stale/corrupt orchestration should never
+       * stop the worker from starting.
+       */
+    }
   }
-}}
+
+  console.log(
+    "[Orchestration Recovery] Startup recovery complete"
+  );
+}

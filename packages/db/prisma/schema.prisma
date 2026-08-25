@@ -75,6 +75,9 @@ model Agent {
   tools        String[] @default([])
   permissions  String[] @default([])
 
+  inputSchema  Json?
+  outputSchema Json?
+
   category String?
 
   isActive Boolean @default(true)
@@ -121,28 +124,29 @@ model TraceEvent {
 }
 
 model OrchestrationRun {
-  id                     String              @id @default(cuid())
-  goal                   String
-  status                 OrchestrationStatus @default(PLANNING)
-  summary                String?
-  plan                   Json?
-  context                Json?
+  id      String              @id @default(cuid())
+  goal    String
+  status  OrchestrationStatus @default(PLANNING)
+  summary String?
+  plan    Json?
+  context Json?
+  result  Json?
 
-  state                  Json?
-  stateVersion           Int                 @default(0)
+  state        Json?
+  stateVersion Int   @default(0)
 
-  unresolvedCapabilities String[]            @default([])
+  unresolvedCapabilities String[] @default([])
 
-  userId                 String
-  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  steps                  OrchestrationStep[]
-  events                 OrchestrationEvent[]
+  steps  OrchestrationStep[]
+  events OrchestrationEvent[]
 
-  createdAt              DateTime            @default(now())
-  startedAt              DateTime?
-  completedAt            DateTime?
-  updatedAt              DateTime            @updatedAt
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
 }
 
 model OrchestrationStep {
@@ -151,11 +155,15 @@ model OrchestrationStep {
   orchestrationId String
   orchestration   OrchestrationRun @relation(fields: [orchestrationId], references: [id], onDelete: Cascade)
 
+  kind OrchestrationStepKind @default(AGENT)
+
   agentId String?
-  agent   Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agent   Agent?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  actionName String?
 
   runId String? @unique
-  run   Run? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  run   Run?    @relation(fields: [runId], references: [id], onDelete: SetNull)
 
   position Int
 
@@ -169,13 +177,20 @@ model OrchestrationStep {
   requiredCapabilities String[] @default([])
   optionalCapabilities String[] @default([])
 
-  input Json?
+  input  Json?
+  result Json?
+  error  String?
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   startedAt   DateTime?
   completedAt DateTime?
 
   @@unique([orchestrationId, position])
+}
+
+enum OrchestrationStepKind {
+  AGENT
+  ACTION
 }
 
 model OrchestrationEvent {

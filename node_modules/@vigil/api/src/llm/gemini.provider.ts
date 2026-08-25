@@ -104,12 +104,18 @@ export function isGeminiQuotaExhausted(
     ).toLowerCase();
 
   return (
-    message.includes(
-      "quota exceeded"
-    ) ||
-    message.includes(
-      "resource_exhausted"
-    ) ||
+  message.includes(
+    "quota exceeded"
+  ) ||
+  message.includes(
+    "exceeded your current quota"
+  ) ||
+  message.includes(
+    "current quota"
+  ) ||
+  message.includes(
+    "resource_exhausted"
+  ) ||
     message.includes(
       "free_tier_requests"
     ) ||

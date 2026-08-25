@@ -9,6 +9,14 @@
 * 🟢 You can import this file directly.
 */
 
+export const OrchestrationStepKind = {
+  AGENT: 'AGENT',
+  ACTION: 'ACTION'
+} as const
+
+export type OrchestrationStepKind = (typeof OrchestrationStepKind)[keyof typeof OrchestrationStepKind]
+
+
 export const RunStatus = {
   PENDING: 'PENDING',
   RUNNING: 'RUNNING',

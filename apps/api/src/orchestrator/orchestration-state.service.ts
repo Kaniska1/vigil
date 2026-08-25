@@ -6,10 +6,12 @@ import {
 
 import {
   evaluateOrchestrationDeterministically,
+  evaluateOrchestrationSemantically,
 } from "./orchestration-evaluator.service.js";
 
 import {
   getOrchestrationMemory,
+  recordOrchestrationDecision,
   recordOrchestrationEvaluation,
   recordOrchestrationStepMemory,
   setOrchestrationMemoryPhase,
@@ -22,6 +24,10 @@ import {
 import {
   replanOrchestration,
 } from "./orchestration-replanner.service.js";
+
+import {
+  persistFinalOrchestrationResult,
+} from "./orchestration-result.service.js";
 
 import type {
   OrchestrationStep,
@@ -108,6 +114,9 @@ export async function markOrchestrationStepRunning(
 
       position:
         step.position,
+
+      iteration:
+        step.iteration,
 
       dependsOnPositions:
         step.dependsOnPositions,
@@ -220,16 +229,22 @@ export async function markOrchestrationStepSuccess(
       position:
         step.position,
 
+      iteration:
+        step.iteration,
+
       agentId:
         step.agentId,
 
       agentSlug:
         step.agent?.slug,
+
+      satisfies:
+        step.satisfies,
     }
   );
 
   /*
-   * Success may unlock downstream graph nodes.
+   * A successful step may unlock another DAG node.
    */
   await scheduleReadyOrchestrationSteps(
     step.orchestrationId
@@ -325,19 +340,25 @@ export async function markOrchestrationStepFailed(
       position:
         step.position,
 
+      iteration:
+        step.iteration,
+
       agentId:
         step.agentId,
 
       agentSlug:
         step.agent?.slug,
+
+      satisfies:
+        step.satisfies,
     }
   );
 
   /*
-   * Do NOT immediately fail the orchestration.
+   * Do not immediately fail the parent.
    *
-   * Failure is now an observation that the
-   * evaluator reasons about.
+   * The evaluator owns the transition from
+   * execution state to orchestration outcome.
    */
   await evaluateIfExecutionSettled(
     step.orchestrationId
@@ -380,9 +401,6 @@ function hasRunnablePendingStep(
         return false;
       }
 
-      /*
-       * Root steps are runnable immediately.
-       */
       if (
         step.dependsOnPositions.length ===
         0
@@ -418,14 +436,11 @@ function hasRunnablePendingStep(
  * Execution → Evaluation boundary
  * --------------------------------------------------
  *
- * Multiple workers may call this almost
- * simultaneously.
+ * Multiple workers can arrive here at almost
+ * exactly the same time.
  *
- * The parent status transition:
- *
- * RUNNING -> EVALUATING
- *
- * acts as an atomic evaluation claim.
+ * RUNNING → EVALUATING therefore acts as our
+ * atomic evaluation claim.
  */
 export async function evaluateIfExecutionSettled(
   orchestrationId:
@@ -455,31 +470,69 @@ export async function evaluateIfExecutionSettled(
     return;
   }
 
-  const memory =
+  const currentMemory =
     await getOrchestrationMemory(
       orchestrationId
     );
 
-  if (!memory) {
+  if (!currentMemory) {
     throw new Error(
       "ORCHESTRATION_MEMORY_NOT_INITIALIZED"
     );
   }
 
+  const allSteps =
+    orchestration.steps as
+      OrchestrationStep[];
+
+  /*
+   * ------------------------------------------------
+   * Historical successful capability reuse
+   * ------------------------------------------------
+   *
+   * We intentionally collect only SUCCESS from
+   * older iterations.
+   *
+   * Old failures must never poison the current
+   * iteration.
+   */
+  const previouslySatisfiedCapabilities =
+    [
+      ...new Set(
+        allSteps
+          .filter(
+            (
+              step
+            ) =>
+              step.iteration <
+                currentMemory.iteration &&
+              step.status ===
+                "SUCCESS"
+          )
+          .flatMap(
+            (
+              step
+            ) =>
+              step.satisfies
+          )
+      ),
+    ];
+
+  /*
+   * Execution state itself remains scoped to the
+   * currently active iteration.
+   */
   const steps =
-    (
-      orchestration.steps as
-        OrchestrationStep[]
-    ).filter(
+    allSteps.filter(
       (
         step
       ) =>
         step.iteration ===
-        memory.iteration
+        currentMemory.iteration
     );
 
   /*
-   * Some jobs are still queued or executing.
+   * Some child runs are still queued/executing.
    */
   if (
     hasActiveExecution(
@@ -490,11 +543,11 @@ export async function evaluateIfExecutionSettled(
   }
 
   /*
-   * A runnable node exists but has not been
-   * scheduled yet.
+   * A runnable step may simply not have been
+   * claimed yet.
    *
-   * Give the scheduler another opportunity
-   * before evaluating the plan.
+   * Let the scheduler make one more pass before
+   * deciding the execution graph is settled.
    */
   if (
     hasRunnablePendingStep(
@@ -510,9 +563,6 @@ export async function evaluateIfExecutionSettled(
 
   /*
    * Atomically claim evaluation.
-   *
-   * If two workers arrive here simultaneously,
-   * exactly one transition from RUNNING succeeds.
    */
   const claimed =
     await prisma.orchestrationRun.updateMany({
@@ -554,9 +604,16 @@ export async function evaluateIfExecutionSettled(
       );
     }
 
-    const evaluation =
+    /*
+     * ------------------------------------------------
+     * Structural evaluation
+     * ------------------------------------------------
+     */
+    const structuralEvaluation =
       evaluateOrchestrationDeterministically({
         memory,
+
+        previouslySatisfiedCapabilities,
 
         steps:
           steps.map(
@@ -584,6 +641,97 @@ export async function evaluateIfExecutionSettled(
           ),
       });
 
+    let finalOutcome =
+      structuralEvaluation.outcome;
+
+    let finalReason =
+      structuralEvaluation.reason;
+
+    let finalMissingCapabilities =
+      structuralEvaluation.missingCapabilities;
+
+    let semanticSource:
+      string =
+      "structural";
+
+    /*
+     * ------------------------------------------------
+     * Optional semantic evaluation
+     * ------------------------------------------------
+     *
+     * Never ask Gemini about an orchestration that
+     * is structurally FAILED or already requires a
+     * deterministic REPLAN.
+     */
+    if (
+      structuralEvaluation.outcome ===
+        "SATISFIED" &&
+      structuralEvaluation.requiresSemanticEvaluation
+    ) {
+      const semanticEvaluation =
+        await evaluateOrchestrationSemantically({
+          memory,
+
+          previouslySatisfiedCapabilities,
+
+          steps:
+            steps.map(
+              (
+                step
+              ) => ({
+                id:
+                  step.id,
+
+                status:
+                  step.status,
+
+                runId:
+                  step.runId,
+
+                satisfies:
+                  step.satisfies,
+
+                requiredCapabilities:
+                  step.requiredCapabilities,
+
+                dependsOnPositions:
+                  step.dependsOnPositions,
+              })
+            ),
+        });
+
+      if (
+        semanticEvaluation
+      ) {
+        semanticSource =
+          semanticEvaluation.provider;
+
+        finalReason =
+          semanticEvaluation.reason;
+
+        if (
+          semanticEvaluation.outcome ===
+          "REPLAN"
+        ) {
+          finalOutcome =
+            "REPLAN";
+
+          finalMissingCapabilities =
+            semanticEvaluation.missingCapabilities;
+        } else {
+          finalOutcome =
+            "SATISFIED";
+
+          finalMissingCapabilities =
+            [];
+        }
+      }
+    }
+
+    /*
+     * Evaluation memory is idempotent per
+     * iteration.
+     */
     await recordOrchestrationEvaluation({
       orchestrationId,
 
@@ -591,41 +739,97 @@ export async function evaluateIfExecutionSettled(
         memory.iteration,
 
       satisfied:
-        evaluation.outcome ===
+        finalOutcome ===
         "SATISFIED",
 
       reason:
-        evaluation.reason,
+        finalReason,
 
       missingCapabilities:
-        evaluation.missingCapabilities,
+        finalMissingCapabilities,
 
       shouldReplan:
-        evaluation.outcome ===
+        finalOutcome ===
         "REPLAN",
     });
 
-    console.log(
-      `[Orchestrator] Evaluation iteration ${memory.iteration}: ${evaluation.outcome}`,
-      {
-        reason:
-          evaluation.reason,
+    await recordOrchestrationDecision({
+      orchestrationId,
+
+      type:
+        "EVALUATION_DECISION",
+
+      reason:
+        finalReason,
+
+      metadata: {
+        iteration:
+          memory.iteration,
+
+        outcome:
+          finalOutcome,
+
+        semanticSource,
+
+        previouslySatisfiedCapabilities,
 
         missingCapabilities:
-          evaluation.missingCapabilities,
+          finalMissingCapabilities,
 
         failedStepIds:
-          evaluation.failedStepIds,
+          structuralEvaluation.failedStepIds,
 
         strandedStepIds:
-          evaluation.strandedStepIds,
+          structuralEvaluation.strandedStepIds,
+
+        semanticEvaluationUsed:
+          semanticSource ===
+          "gemini",
+      },
+    });
+
+    console.log(
+      `[Orchestrator] Evaluation iteration ${memory.iteration}: ${finalOutcome}`,
+      {
+        reason:
+          finalReason,
+
+        previouslySatisfiedCapabilities,
+
+        missingCapabilities:
+          finalMissingCapabilities,
+
+        failedStepIds:
+          structuralEvaluation.failedStepIds,
+
+        strandedStepIds:
+          structuralEvaluation.strandedStepIds,
+
+        semanticSource,
       }
     );
 
+    /*
+     * ------------------------------------------------
+     * SUCCESS
+     * ------------------------------------------------
+     */
     if (
-      evaluation.outcome ===
+      finalOutcome ===
       "SATISFIED"
     ) {
+      /*
+       * Build the parent result before marking the
+       * orchestration terminal.
+       *
+       * Our result builder now aggregates useful
+       * successful results across iterations.
+       */
+      const finalResult =
+        await persistFinalOrchestrationResult(
+          orchestrationId
+        );
+
       await prisma.orchestrationRun.update({
         where: {
           id:
@@ -649,44 +853,66 @@ export async function evaluateIfExecutionSettled(
       await traceOrchestration(
         orchestrationId,
         "ORCHESTRATION_COMPLETED",
-        "Orchestration completed successfully"
+        "Orchestration completed successfully",
+        {
+          iteration:
+            finalResult.iteration,
+
+          resultCount:
+            finalResult.results.length,
+
+          capabilitiesSatisfied:
+            finalResult.capabilitiesSatisfied,
+
+          previouslySatisfiedCapabilities,
+        }
       );
 
       return;
     }
 
+    /*
+     * ------------------------------------------------
+     * REPLAN
+     * ------------------------------------------------
+     */
     if (
-  evaluation.outcome ===
-  "REPLAN"
-) {
-  await prisma.orchestrationRun.update({
-    where: {
-      id:
+      finalOutcome ===
+      "REPLAN"
+    ) {
+      await prisma.orchestrationRun.update({
+        where: {
+          id:
+            orchestrationId,
+        },
+
+        data: {
+          status:
+            "REPLANNING",
+
+          completedAt:
+            null,
+        },
+      });
+
+      await setOrchestrationMemoryPhase(
         orchestrationId,
-    },
+        "REPLANNING"
+      );
 
-    data: {
-      status:
-        "REPLANNING",
+      await replanOrchestration(
+        orchestrationId,
+        finalReason
+      );
 
-      completedAt:
-        null,
-    },
-  });
+      return;
+    }
 
-  await setOrchestrationMemoryPhase(
-    orchestrationId,
-    "REPLANNING"
-  );
-
-  await replanOrchestration(
-    orchestrationId,
-    evaluation.reason
-  );
-
-  return;
-}
-
+    /*
+     * ------------------------------------------------
+     * FAILED
+     * ------------------------------------------------
+     */
     await prisma.orchestrationRun.update({
       where: {
         id:
@@ -710,7 +936,20 @@ export async function evaluateIfExecutionSettled(
     await traceOrchestration(
       orchestrationId,
       "ORCHESTRATION_FAILED",
-      evaluation.reason
+      finalReason,
+      {
+        iteration:
+          memory.iteration,
+
+        missingCapabilities:
+          finalMissingCapabilities,
+
+        failedStepIds:
+          structuralEvaluation.failedStepIds,
+
+        strandedStepIds:
+          structuralEvaluation.strandedStepIds,
+      }
     );
   } catch (
     error
@@ -753,20 +992,18 @@ export async function evaluateIfExecutionSettled(
 }
 
 export async function resumeOrchestrationEvaluation(
-  orchestrationId: string
+  orchestrationId:
+    string
 ): Promise<void> {
   /*
-   * An orchestration can be left in EVALUATING
-   * if the API/worker dies after claiming the
-   * evaluation boundary but before evaluation
-   * finishes.
+   * A process may die after:
    *
-   * Move it back to RUNNING atomically and let
-   * the normal execution → evaluation boundary
-   * run again.
+   * RUNNING → EVALUATING
    *
-   * Evaluation memory writes are idempotent per
-   * iteration, so replaying this boundary is safe.
+   * but before evaluation finishes.
+   *
+   * Release the claim back to RUNNING and run the
+   * normal evaluation boundary again.
    */
   const released =
     await prisma.orchestrationRun.updateMany({

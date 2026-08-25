@@ -1,4 +1,10 @@
-import type { VigilTool } from "../tool.types.js";
+import type {
+  VigilTool,
+} from "../tool.types.js";
+
+import {
+  githubFetch,
+} from "./github-client.js";
 
 import type {
   GetPullRequestFilesInput,
@@ -11,20 +17,22 @@ export class GetPullRequestFilesTool
     PullRequestFile[]
   >
 {
-  name = "github.getPullRequestFiles";
+  name =
+    "github.getPullRequestFiles";
 
-  async execute(input: GetPullRequestFilesInput) {
-    const { owner, repo, pullNumber } = input;
+  async execute(
+    input: GetPullRequestFilesInput
+  ) {
+    const {
+      owner,
+      repo,
+      pullNumber,
+    } = input;
 
-    const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/files?per_page=100`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "User-Agent": "Vigil-Agent-Platform",
-        },
-      }
-    );
+    const response =
+      await githubFetch(
+        `/repos/${owner}/${repo}/pulls/${pullNumber}/files?per_page=100`
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -32,18 +40,32 @@ export class GetPullRequestFilesTool
       );
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
-    const files: PullRequestFile[] = data.map(
-      (file: any) => ({
-        filename: file.filename,
-        status: file.status,
-        additions: file.additions,
-        deletions: file.deletions,
-        changes: file.changes,
-        patch: file.patch,
-      })
-    );
+    const files:
+      PullRequestFile[] =
+      data.map(
+        (file: any) => ({
+          filename:
+            file.filename,
+
+          status:
+            file.status,
+
+          additions:
+            file.additions,
+
+          deletions:
+            file.deletions,
+
+          changes:
+            file.changes,
+
+          patch:
+            file.patch,
+        })
+      );
 
     return {
       data: files,

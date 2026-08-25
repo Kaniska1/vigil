@@ -17,6 +17,10 @@ import {
 } from "../metrics/pricing.js";
 
 import {
+  evaluateToolPermission,
+} from "./execution-policy.service.js";
+
+import {
   GetPullRequestTool,
 } from "../tools/github/get-pull-request.tool.js";
 
@@ -27,7 +31,12 @@ import {
 import type {
   GetPullRequestInput,
   GetPullRequestFilesInput,
+  CreatePullRequestReviewInput,
 } from "../tools/github/github.types.js";
+
+import {
+  CreatePullRequestReviewTool,
+} from "../tools/github/create-pull-request-review.tool.js";
 
 const llmProvider =
   new GeminiProvider();
@@ -35,11 +44,17 @@ const llmProvider =
 const getPullRequestTool =
   new GetPullRequestTool();
 
+const createPullRequestReviewTool =
+  new CreatePullRequestReviewTool();
+
 const getPullRequestFilesTool =
   new GetPullRequestFilesTool();
 
 export function createExecutionContext(
-  runId: string
+  runId: string,
+
+  agentPermissions:
+    string[] = []
 ): ExecutionContext {
   const trace: ExecutionContext["trace"] =
     async (
@@ -75,9 +90,52 @@ export function createExecutionContext(
       await publishRunEvent(event);
     };
 
+  async function assertToolPermission(
+    toolName: string
+  ) {
+    const policyDecision =
+      evaluateToolPermission({
+        toolName,
+        agentPermissions,
+      });
+
+    if (!policyDecision.allowed) {
+      await trace(
+        "ERROR",
+        `${toolName} blocked by execution policy`,
+        {
+          tool:
+            toolName,
+
+          policy:
+            "DENY",
+
+          requiredPermission:
+            policyDecision.requiredPermission,
+
+          agentPermissions,
+
+          reason:
+            policyDecision.reason,
+        }
+      );
+
+      throw new Error(
+        `TOOL_PERMISSION_DENIED:${toolName}`
+      );
+    }
+
+    return policyDecision;
+  }
+
   async function getPullRequest(
     input: GetPullRequestInput
   ) {
+    const policyDecision =
+      await assertToolPermission(
+        getPullRequestTool.name
+      );
+
     const startedAt =
       performance.now();
 
@@ -87,7 +145,14 @@ export function createExecutionContext(
       {
         tool:
           getPullRequestTool.name,
+
         input,
+
+        policy:
+          "ALLOW",
+
+        requiredPermission:
+          policyDecision.requiredPermission,
       }
     );
 
@@ -148,6 +213,11 @@ export function createExecutionContext(
   async function getPullRequestFiles(
     input: GetPullRequestFilesInput
   ) {
+    const policyDecision =
+      await assertToolPermission(
+        getPullRequestFilesTool.name
+      );
+
     const startedAt =
       performance.now();
 
@@ -157,7 +227,14 @@ export function createExecutionContext(
       {
         tool:
           getPullRequestFilesTool.name,
+
         input,
+
+        policy:
+          "ALLOW",
+
+        requiredPermission:
+          policyDecision.requiredPermission,
       }
     );
 
@@ -201,6 +278,93 @@ export function createExecutionContext(
         {
           tool:
             getPullRequestFilesTool.name,
+
+          latencyMs,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unknown tool error",
+        }
+      );
+
+      throw error;
+    }
+  }
+
+  async function createPullRequestReview(
+    input: CreatePullRequestReviewInput
+  ) {
+    const policyDecision =
+      await assertToolPermission(
+        createPullRequestReviewTool.name
+      );
+
+    const startedAt =
+      performance.now();
+
+    await trace(
+      "TOOL_CALLED",
+      `${createPullRequestReviewTool.name} called`,
+      {
+        tool:
+          createPullRequestReviewTool.name,
+
+        input: {
+          ...input,
+
+          body:
+            `[${input.body.length} chars]`,
+        },
+
+        policy:
+          "ALLOW",
+
+        requiredPermission:
+          policyDecision.requiredPermission,
+      }
+    );
+
+    try {
+      const result =
+        await createPullRequestReviewTool.execute(
+          input
+        );
+
+      const latencyMs =
+        Math.round(
+          performance.now() -
+            startedAt
+        );
+
+      await trace(
+        "TOOL_COMPLETED",
+        `${createPullRequestReviewTool.name} completed`,
+        {
+          tool:
+            createPullRequestReviewTool.name,
+
+          latencyMs,
+
+          output:
+            result.data,
+        }
+      );
+
+      return result.data;
+    } catch (error) {
+      const latencyMs =
+        Math.round(
+          performance.now() -
+            startedAt
+        );
+
+      await trace(
+        "ERROR",
+        `${createPullRequestReviewTool.name} failed`,
+        {
+          tool:
+            createPullRequestReviewTool.name,
 
           latencyMs,
 
@@ -308,6 +472,7 @@ export function createExecutionContext(
       github: {
         getPullRequest,
         getPullRequestFiles,
+        createPullRequestReview,
       },
     },
   };

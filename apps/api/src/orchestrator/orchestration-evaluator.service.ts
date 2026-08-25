@@ -1,11 +1,68 @@
+import {
+  GeminiProvider,
+  isGeminiAvailabilityError,
+} from "../llm/gemini.provider.js";
+
+import {
+  isKnownCapability,
+} from "./capability-catalog.js";
+
 import type {
   OrchestrationMemoryState,
 } from "./orchestration-memory.types.js";
+
+const MAX_REPLAN_ITERATIONS =
+  2;
 
 export type OrchestrationEvaluationOutcome =
   | "SATISFIED"
   | "REPLAN"
   | "FAILED";
+
+export type EvaluatorStep = {
+  id: string;
+
+  status:
+  | "PENDING"
+  | "RUNNING"
+  | "SUCCESS"
+  | "FAILED"
+  | "SKIPPED";
+
+  runId:
+    string | null;
+
+  satisfies:
+    string[];
+
+  requiredCapabilities:
+    string[];
+
+  dependsOnPositions:
+    number[];
+};
+
+type EvaluateOrchestrationInput = {
+  memory:
+    OrchestrationMemoryState;
+
+  /*
+   * Successful capabilities from older
+   * orchestration iterations.
+   *
+   * We deliberately pass only the capabilities,
+   * not old failed-step state.
+   */
+  previouslySatisfiedCapabilities:
+    string[];
+
+  /*
+   * Only the currently active iteration's
+   * execution steps belong here.
+   */
+  steps:
+    EvaluatorStep[];
+};
 
 export type OrchestrationEvaluationResult = {
   outcome:
@@ -27,48 +84,6 @@ export type OrchestrationEvaluationResult = {
     boolean;
 };
 
-/*
- * Number of replans Vigil may request before
- * declaring that the orchestration cannot
- * recover automatically.
- *
- * iteration starts at 0.
- *
- * 0 -> initial plan
- * 1 -> first replan
- * 2 -> second replan
- */
-export const MAX_REPLAN_ITERATIONS =
-  2;
-
-type EvaluationStep = {
-  id:
-    string;
-
-  status:
-    string;
-
-  runId:
-    string | null;
-
-  satisfies:
-    string[];
-
-  requiredCapabilities:
-    string[];
-
-  dependsOnPositions:
-    number[];
-};
-
-type EvaluateOrchestrationInput = {
-  memory:
-    OrchestrationMemoryState;
-
-  steps:
-    EvaluationStep[];
-};
-
 function unique(
   values:
     string[]
@@ -80,129 +95,136 @@ function unique(
   ];
 }
 
-/*
- * --------------------------------------------------
- * Deterministic evaluator
- * --------------------------------------------------
- *
- * This layer intentionally performs ZERO LLM calls.
- *
- * It answers structural questions such as:
- *
- * - Did execution fail?
- * - Did all required capabilities actually complete?
- * - Are some graph nodes stranded?
- * - Have we already exhausted our replan budget?
- *
- * Semantic quality evaluation comes later and only
- * runs when structural evaluation is insufficient.
- */
+function getRequiredCapabilities(
+  steps:
+    EvaluatorStep[]
+): string[] {
+  return unique(
+    steps.flatMap(
+      (
+        step
+      ) =>
+        step.requiredCapabilities
+    )
+  );
+}
+
+function getCurrentSatisfiedCapabilities(
+  steps:
+    EvaluatorStep[]
+): string[] {
+  return unique(
+    steps
+      .filter(
+        (
+          step
+        ) =>
+          step.status ===
+          "SUCCESS"
+      )
+      .flatMap(
+        (
+          step
+        ) =>
+          step.satisfies
+      )
+  );
+}
+
+function getFailedStepIds(
+  steps:
+    EvaluatorStep[]
+): string[] {
+  return steps
+    .filter(
+      (
+        step
+      ) =>
+        step.status ===
+        "FAILED"
+    )
+    .map(
+      (
+        step
+      ) =>
+        step.id
+    );
+}
+
+function getStrandedStepIds(
+  steps:
+    EvaluatorStep[]
+): string[] {
+  const stepByPosition =
+    new Map<
+      number,
+      EvaluatorStep
+    >();
+
+  /*
+   * EvaluatorStep itself intentionally does not
+   * carry the DB position because the evaluator
+   * does not otherwise need it.
+   *
+   * Dependency-stranding is therefore determined
+   * conservatively below:
+   *
+   * a PENDING step with no runId after scheduling
+   * has settled is considered stranded.
+   *
+   * The scheduler has already had another chance
+   * to schedule runnable nodes before this
+   * evaluator is called.
+   */
+  void stepByPosition;
+
+  return steps
+    .filter(
+      (
+        step
+      ) =>
+        step.status ===
+          "PENDING" &&
+        step.runId ===
+          null
+    )
+    .map(
+      (
+        step
+      ) =>
+        step.id
+    );
+}
+
 export function evaluateOrchestrationDeterministically(
   input:
     EvaluateOrchestrationInput
 ): OrchestrationEvaluationResult {
-  const {
-    memory,
-    steps,
-  } =
-    input;
-
-  if (
-    steps.length ===
-    0
-  ) {
-    return {
-      outcome:
-        "FAILED",
-
-      reason:
-        "The orchestration contains no execution steps.",
-
-      missingCapabilities:
-        [],
-
-      failedStepIds:
-        [],
-
-      strandedStepIds:
-        [],
-
-      requiresSemanticEvaluation:
-        false,
-    };
-  }
-
-  const failedStepIds =
-    steps
-      .filter(
-        (
-          step
-        ) =>
-          step.status ===
-          "FAILED"
-      )
-      .map(
-        (
-          step
-        ) =>
-          step.id
-      );
-
-  /*
-   * A pending step with no Run once execution has
-   * settled means that the graph could not reach it.
-   *
-   * The most common reason is an upstream failure.
-   */
-  const strandedStepIds =
-    steps
-      .filter(
-        (
-          step
-        ) =>
-          step.status ===
-            "PENDING" &&
-          step.runId ===
-            null
-      )
-      .map(
-        (
-          step
-        ) =>
-          step.id
-      );
-
   const requiredCapabilities =
-    unique(
-      steps.flatMap(
-        (
-          step
-        ) =>
-          step.requiredCapabilities
-      )
+    getRequiredCapabilities(
+      input.steps
+    );
+
+  const currentSatisfiedCapabilities =
+    getCurrentSatisfiedCapabilities(
+      input.steps
     );
 
   /*
-   * Only SUCCESS steps count as having actually
-   * satisfied capabilities.
+   * ------------------------------------------------
+   * Cross-iteration capability reuse
+   * ------------------------------------------------
+   *
+   * Prior SUCCESS contributes to coverage.
+   *
+   * Prior FAILURE does not.
    */
   const satisfiedCapabilities =
-    new Set(
-      steps
-        .filter(
-          (
-            step
-          ) =>
-            step.status ===
-            "SUCCESS"
-        )
-        .flatMap(
-          (
-            step
-          ) =>
-            step.satisfies
-        )
-    );
+    new Set([
+      ...input.previouslySatisfiedCapabilities,
+
+      ...currentSatisfiedCapabilities,
+    ]);
 
   const missingCapabilities =
     requiredCapabilities.filter(
@@ -214,24 +236,26 @@ export function evaluateOrchestrationDeterministically(
         )
     );
 
-  const needsRecovery =
-    failedStepIds.length >
-      0 ||
-    strandedStepIds.length >
-      0 ||
-    missingCapabilities.length >
-      0;
+  const failedStepIds =
+    getFailedStepIds(
+      input.steps
+    );
+
+  const strandedStepIds =
+    getStrandedStepIds(
+      input.steps
+    );
 
   /*
-   * Execution failure and planning insufficiency are
-   * different things.
+   * ------------------------------------------------
+   * Execution/provider failures
+   * ------------------------------------------------
    *
-   * A failed agent/tool/provider call does not imply
-   * that generating another plan will help.
+   * A failed agent execution is not automatically
+   * evidence that a different plan will work.
    *
-   * In particular, blindly replanning after an LLM
-   * provider outage would simply execute the same
-   * work again and waste requests.
+   * This prevents quota/provider failures from
+   * creating useless replanning loops.
    */
   if (
     failedStepIds.length >
@@ -255,17 +279,19 @@ export function evaluateOrchestrationDeterministically(
     };
   }
 
-  const needsReplan =
+  /*
+   * ------------------------------------------------
+   * Structurally incomplete graph
+   * ------------------------------------------------
+   */
+  if (
     strandedStepIds.length >
       0 ||
     missingCapabilities.length >
-      0;
-
-  if (
-    needsReplan
+      0
   ) {
     if (
-      memory.iteration >=
+      input.memory.iteration >=
       MAX_REPLAN_ITERATIONS
     ) {
       return {
@@ -273,12 +299,11 @@ export function evaluateOrchestrationDeterministically(
           "FAILED",
 
         reason:
-          `Vigil could not satisfy the goal after ${memory.iteration} replanning iteration(s).`,
+          "The orchestration is still structurally incomplete after reaching the maximum replanning limit.",
 
         missingCapabilities,
 
-        failedStepIds:
-          [],
+        failedStepIds,
 
         strandedStepIds,
 
@@ -288,25 +313,26 @@ export function evaluateOrchestrationDeterministically(
     }
 
     const reasons:
-      string[] = [];
-
-    if (
-      strandedStepIds.length >
-      0
-    ) {
-      reasons.push(
-        `${strandedStepIds.length} execution step(s) became unreachable`
-      );
-    }
+      string[] =
+      [];
 
     if (
       missingCapabilities.length >
       0
     ) {
       reasons.push(
-        `required capabilities remain unsatisfied: ${missingCapabilities.join(
+        `Missing required capabilities: ${missingCapabilities.join(
           ", "
         )}`
+      );
+    }
+
+    if (
+      strandedStepIds.length >
+      0
+    ) {
+      reasons.push(
+        `${strandedStepIds.length} execution step(s) are stranded and cannot currently make progress.`
       );
     }
 
@@ -315,14 +341,13 @@ export function evaluateOrchestrationDeterministically(
         "REPLAN",
 
       reason:
-        `The current plan is incomplete because ${reasons.join(
-          "; "
-        )}.`,
+        reasons.join(
+          " "
+        ),
 
       missingCapabilities,
 
-      failedStepIds:
-        [],
+      failedStepIds,
 
       strandedStepIds,
 
@@ -331,67 +356,347 @@ export function evaluateOrchestrationDeterministically(
     };
   }
 
-  const everyStepComplete =
-    steps.every(
-      (
-        step
-      ) =>
-        step.status ===
-          "SUCCESS" ||
-        step.status ===
-          "SKIPPED"
-    );
-
-  if (
-    everyStepComplete
-  ) {
-    return {
-      outcome:
-        "SATISFIED",
-
-      reason:
-        "All planned execution steps completed and all required capabilities were structurally satisfied.",
-
-      missingCapabilities:
-        [],
-
-      failedStepIds:
-        [],
-
-      strandedStepIds:
-        [],
-
-      /*
-       * Later this becomes the hook for an
-       * optional semantic evaluator:
-       *
-       * "The agents succeeded, but are their
-       * outputs actually good enough?"
-       */
-      requiresSemanticEvaluation:
-        true,
-    };
-  }
-
   /*
-   * We should normally never reach this branch
-   * because evaluation only starts after a wave
-   * has settled.
+   * ------------------------------------------------
+   * Structural success
+   * ------------------------------------------------
+   *
+   * Deterministically, every required capability
+   * has now been covered either:
+   *
+   * - in this iteration, or
+   * - by a reusable success from an older iteration.
+   *
+   * Semantic evaluation may optionally decide
+   * whether those successful outputs really
+   * satisfy the user's goal.
    */
   return {
     outcome:
-      "FAILED",
+      "SATISFIED",
 
     reason:
-      "The orchestration reached an inconsistent execution state.",
+      input.previouslySatisfiedCapabilities.length >
+      0
+        ? "All required capabilities were satisfied using the current execution together with reusable successful results from previous iterations."
+        : "All required capabilities were satisfied successfully.",
 
-    missingCapabilities,
+    missingCapabilities:
+      [],
 
-    failedStepIds,
+    failedStepIds:
+      [],
 
-    strandedStepIds,
+    strandedStepIds:
+      [],
 
     requiresSemanticEvaluation:
-      false,
+      true,
   };
+}
+/*
+ * ==================================================
+ * RESULT-AWARE SEMANTIC EVALUATION
+ * ==================================================
+ */
+
+const SEMANTIC_EVALUATION_TIMEOUT_MS = 15_000;
+const MAX_SEMANTIC_RESULT_CHARS = 3_000;
+const MAX_SEMANTIC_CONTEXT_CHARS = 10_000;
+
+export type SemanticEvaluationOutcome =
+  | "SATISFIED"
+  | "REPLAN";
+
+export type SemanticOrchestrationEvaluationResult = {
+  outcome: SemanticEvaluationOutcome;
+  reason: string;
+  missingCapabilities: string[];
+  evaluatedResultCount: number;
+  provider: "gemini";
+};
+
+type SemanticEvaluationCandidate = {
+  stepId: string;
+  position: number;
+  agentSlug: string | null;
+  result: unknown;
+};
+
+function semanticEvaluationEnabled(): boolean {
+  return process.env.VIGIL_SEMANTIC_EVALUATION === "true";
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(message)),
+      timeoutMs
+    );
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+}
+
+function stripMarkdownCodeFence(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed.startsWith("```")) {
+    return trimmed;
+  }
+
+  return trimmed
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+}
+
+function stringifyResult(result: unknown): string {
+  try {
+    const serialized = JSON.stringify(result);
+
+    if (!serialized) {
+      return "null";
+    }
+
+    return serialized.length <= MAX_SEMANTIC_RESULT_CHARS
+      ? serialized
+      : `${serialized.slice(0, MAX_SEMANTIC_RESULT_CHARS)}...[truncated]`;
+  } catch {
+    return String(result).slice(0, MAX_SEMANTIC_RESULT_CHARS);
+  }
+}
+
+function getSuccessfulResultCandidates(
+  memory: OrchestrationMemoryState
+): SemanticEvaluationCandidate[] {
+  return Object.values(memory.stepResults)
+    .filter(
+      (step) =>
+        step.status === "SUCCESS" &&
+        step.result !== null &&
+        step.result !== undefined
+    )
+    .sort((left, right) => left.position - right.position)
+    .map((step) => ({
+      stepId: step.stepId,
+      position: step.position,
+      agentSlug: step.agentSlug,
+      result: step.result,
+    }));
+}
+
+function buildSemanticEvaluationPrompt(
+  memory: OrchestrationMemoryState,
+  candidates: SemanticEvaluationCandidate[]
+): string {
+  const compactResults: string[] = [];
+  let totalChars = 0;
+
+  for (const candidate of candidates) {
+    const entry = JSON.stringify({
+      stepId: candidate.stepId,
+      position: candidate.position,
+      agentSlug: candidate.agentSlug,
+      result: stringifyResult(candidate.result),
+    });
+
+    if (totalChars + entry.length > MAX_SEMANTIC_CONTEXT_CHARS) {
+      break;
+    }
+
+    compactResults.push(entry);
+    totalChars += entry.length;
+  }
+
+  return [
+    "You are Vigil's semantic orchestration evaluator.",
+    "",
+    "Determine whether the user's goal is actually satisfied by the successful worker outputs.",
+    "",
+    "Rules:",
+    "- Judge the CONTENT of results, not merely execution status.",
+    "- Do not invent agents.",
+    "- If more work is needed, request only canonical capabilities.",
+    "- A technically successful worker may still reveal a blocker.",
+    "- Request a new capability only when additional work is genuinely necessary to satisfy the original goal.",
+    "",
+    `Goal: ${memory.goal}`,
+    "",
+    "Successful worker results:",
+    compactResults.length ? compactResults.join("\n") : "(none)",
+    "",
+    "Return ONLY valid JSON:",
+    "{",
+    '  "outcome": "SATISFIED" | "REPLAN",',
+    '  "reason": "brief explanation",',
+    '  "missingCapabilities": ["canonical-capability-id"]',
+    "}",
+  ].join("\n");
+}
+
+function parseSemanticEvaluation(raw: string): {
+  outcome: SemanticEvaluationOutcome;
+  reason: string;
+  missingCapabilities: string[];
+} {
+  const cleaned = stripMarkdownCodeFence(raw);
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error(
+      "ORCHESTRATION_SEMANTIC_EVALUATION_INVALID_JSON"
+    );
+  }
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    Array.isArray(parsed)
+  ) {
+    throw new Error(
+      "ORCHESTRATION_SEMANTIC_EVALUATION_INVALID_RESPONSE"
+    );
+  }
+
+  const candidate = parsed as {
+    outcome?: unknown;
+    reason?: unknown;
+    missingCapabilities?: unknown;
+  };
+
+  if (
+    candidate.outcome !== "SATISFIED" &&
+    candidate.outcome !== "REPLAN"
+  ) {
+    throw new Error(
+      "ORCHESTRATION_SEMANTIC_EVALUATION_INVALID_OUTCOME"
+    );
+  }
+
+  if (
+    typeof candidate.reason !== "string" ||
+    !candidate.reason.trim()
+  ) {
+    throw new Error(
+      "ORCHESTRATION_SEMANTIC_EVALUATION_INVALID_REASON"
+    );
+  }
+
+  if (!Array.isArray(candidate.missingCapabilities)) {
+    throw new Error(
+      "ORCHESTRATION_SEMANTIC_EVALUATION_INVALID_CAPABILITIES"
+    );
+  }
+
+  const missingCapabilities = unique(
+    candidate.missingCapabilities
+      .filter(
+        (capability): capability is string =>
+          typeof capability === "string" &&
+          capability.trim().length > 0
+      )
+      .map((capability) => capability.trim())
+      .filter((capability) => isKnownCapability(capability))
+  );
+
+  if (
+    candidate.outcome === "REPLAN" &&
+    missingCapabilities.length === 0
+  ) {
+    return {
+      outcome: "SATISFIED",
+      reason:
+        `${candidate.reason.trim()} No valid canonical capability was requested, so Vigil will not create an unresolvable semantic replan.`,
+      missingCapabilities: [],
+    };
+  }
+
+  return {
+    outcome: candidate.outcome,
+    reason: candidate.reason.trim(),
+    missingCapabilities:
+      candidate.outcome === "REPLAN"
+        ? missingCapabilities
+        : [],
+  };
+}
+
+export async function evaluateOrchestrationSemantically(
+  input: EvaluateOrchestrationInput
+): Promise<SemanticOrchestrationEvaluationResult | null> {
+  if (!semanticEvaluationEnabled()) {
+    return null;
+  }
+
+  const structural =
+    evaluateOrchestrationDeterministically(input);
+
+  if (
+    structural.outcome !== "SATISFIED" ||
+    !structural.requiresSemanticEvaluation
+  ) {
+    return null;
+  }
+
+  const candidates =
+    getSuccessfulResultCandidates(input.memory);
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  const prompt =
+    buildSemanticEvaluationPrompt(input.memory, candidates);
+
+  try {
+    const llm = new GeminiProvider();
+
+    const response = await withTimeout(
+      llm.generate(
+        { prompt },
+        { lowLatency: true }
+      ),
+      SEMANTIC_EVALUATION_TIMEOUT_MS,
+      "ORCHESTRATION_SEMANTIC_EVALUATION_TIMEOUT"
+    );
+
+    const semantic =
+      parseSemanticEvaluation(response.text);
+
+    return {
+      ...semantic,
+      evaluatedResultCount: candidates.length,
+      provider: "gemini",
+    };
+  } catch (error) {
+    if (isGeminiAvailabilityError(error)) {
+      console.warn(
+        "[OrchestrationEvaluator] Semantic evaluation unavailable; preserving deterministic result."
+      );
+      return null;
+    }
+
+    console.warn(
+      "[OrchestrationEvaluator] Semantic evaluation failed; preserving deterministic result:",
+      error
+    );
+
+    return null;
+  }
 }

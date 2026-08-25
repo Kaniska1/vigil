@@ -539,3 +539,50 @@ export async function recordOrchestrationReplan(
     }
   );
 }
+
+type RecordDecisionInput = {
+  orchestrationId: string;
+
+  type: string;
+
+  reason: string;
+
+  metadata?: Record<
+    string,
+    unknown
+  >;
+};
+
+export async function recordOrchestrationDecision(
+  input:
+    RecordDecisionInput
+): Promise<void> {
+  await updateOrchestrationMemory(
+    input.orchestrationId,
+    (
+      memory
+    ) => {
+      memory.decisions.push({
+        type:
+          input.type,
+
+        reason:
+          input.reason,
+
+        metadata:
+          input.metadata
+            ? JSON.parse(
+                JSON.stringify(
+                  input.metadata
+                )
+              )
+            : undefined,
+
+        createdAt:
+          new Date().toISOString(),
+      });
+
+      return memory;
+    }
+  );
+}

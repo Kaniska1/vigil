@@ -6,8 +6,10 @@ import type {
 import type {
   GetPullRequestInput,
   GetPullRequestFilesInput,
+  CreatePullRequestReviewInput,
   PullRequestData,
   PullRequestFile,
+  PullRequestReviewData,
 } from "../tools/github/github.types.js";
 
 export interface ExecutionContext {
@@ -18,15 +20,20 @@ export interface ExecutionContext {
   };
 
   tools: {
-    github: {
-      getPullRequest(
-        input: GetPullRequestInput
-      ): Promise<PullRequestData>;
-      getPullRequestFiles(
-        input: GetPullRequestFilesInput
-      ): Promise<PullRequestFile[]>;
-    };
+  github: {
+    getPullRequest(
+      input: GetPullRequestInput
+    ): Promise<PullRequestData>;
+
+    getPullRequestFiles(
+      input: GetPullRequestFilesInput
+    ): Promise<PullRequestFile[]>;
+
+    createPullRequestReview(
+      input: CreatePullRequestReviewInput
+    ): Promise<PullRequestReviewData>;
   };
+};
 
   trace(
     type:

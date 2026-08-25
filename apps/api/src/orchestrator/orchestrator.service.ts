@@ -8,16 +8,22 @@ import {
 } from "../services/agent-registry.service.js";
 
 import {
+  getCapabilityById,
   getCapabilityIds,
   isKnownCapability,
 } from "./capability-catalog.js";
+
+import {
+  resolveMissingOrchestrationInputs,
+} from "./orchestration-input-resolver.js";
 
 import {
   buildOrchestratorPrompt,
 } from "./orchestrator-prompts.js";
 
 import type {
-  AgentExecutionStep,
+  ActionExecutionStep,
+  OrchestrationExecutionStep,
   OrchestratorGeneratedPlan,
   OrchestratorGoalInput,
   OrchestratorPlan,
@@ -242,6 +248,24 @@ const FALLBACK_CAPABILITY_RULES:
     },
 
     {
+      capability:
+        "publish-pr-review",
+
+      patterns: [
+        /\bpublish (?:the |this )?(?:review|findings|result)\b/i,
+        /\bpost (?:the |this )?(?:review|findings|result)\b/i,
+        /\bcomment (?:on|to) (?:the |this )?(?:pull request|pr)\b/i,
+        /\bwrite (?:the |this )?(?:review|result) (?:back )?to github\b/i,
+      ],
+
+      reason:
+        "The goal explicitly asks Vigil to publish the completed review back to GitHub.",
+
+      required:
+        true,
+    },
+
+    {
   capability:
     "api-debugging",
 
@@ -395,9 +419,11 @@ function parseGeneratedPlan(
     );
   }
 
+
   const candidate =
     parsed as {
-      summary?: unknown;
+      summary?:
+        unknown;
 
       capabilities?:
         unknown;
@@ -754,10 +780,24 @@ function buildExecutionSteps(
   steps:
     ResolvedPlanStep[]
 ):
-  AgentExecutionStep[] {
+  OrchestrationExecutionStep[] {
+  const agentSteps =
+    steps.filter(
+      (step) =>
+        step.providerType ===
+        "AGENT"
+    );
+
+  const actionSteps =
+    steps.filter(
+      (step) =>
+        step.providerType ===
+        "ACTION"
+    );
+
   const uncovered =
     new Set(
-      steps
+      agentSteps
         .filter(
           (step) =>
             step.candidates.length >
@@ -783,7 +823,7 @@ function buildExecutionSteps(
 
   for (
     const step of
-    steps
+    agentSteps
   ) {
     for (
       const agent of
@@ -817,7 +857,7 @@ function buildExecutionSteps(
   }
 
   const selected:
-    AgentExecutionStep[] =
+    OrchestrationExecutionStep[] =
     [];
 
   while (
@@ -900,7 +940,7 @@ function buildExecutionSteps(
     const requiredCapabilities =
       best.coverage.filter(
         (capability) =>
-          steps.some(
+          agentSteps.some(
             (step) =>
               step.capability ===
                 capability &&
@@ -911,7 +951,7 @@ function buildExecutionSteps(
     const optionalCapabilities =
       best.coverage.filter(
         (capability) =>
-          steps.some(
+          agentSteps.some(
             (step) =>
               step.capability ===
                 capability &&
@@ -920,37 +960,25 @@ function buildExecutionSteps(
       );
 
     selected.push({
-  /*
-   * The registry slug is stable and unique
-   * for this planning pass.
-   *
-   * Later the actual planner can emit richer
-   * graph node IDs without changing the
-   * scheduler or persistence layer.
-   */
-  key:
-    `agent:${best.agent.slug}`,
+      kind:
+        "AGENT",
 
-  /*
-   * Capability planning currently produces
-   * one independent wave of agents.
-   *
-   * We deliberately keep that behavior for
-   * now instead of inventing dependencies.
-   */
-  dependsOnKeys:
-    [],
+      key:
+        `agent:${best.agent.slug}`,
 
-  agent:
-    best.agent,
+      dependsOnKeys:
+        [],
 
-  satisfies:
-    best.coverage,
+      agent:
+        best.agent,
 
-  requiredCapabilities,
+      satisfies:
+        best.coverage,
 
-  optionalCapabilities,
-});
+      requiredCapabilities,
+
+      optionalCapabilities,
+    });
 
     for (
       const capability of
@@ -963,6 +991,100 @@ function buildExecutionSteps(
 
     agentCoverage.delete(
       best.agent.id
+    );
+  }
+
+  /*
+   * Action capabilities are deterministic providers.
+   * They depend on capabilities, never fixed agent IDs.
+   */
+  const plannedCapabilities =
+    new Set(
+      steps.map(
+        (step) =>
+          step.capability
+      )
+    );
+
+  for (
+    const actionStep of
+    actionSteps
+  ) {
+    if (!actionStep.action) {
+      throw new Error(
+        `ORCHESTRATOR_ACTION_MISSING:${actionStep.capability}`
+      );
+    }
+
+    const dependencyCapabilities =
+      new Set(
+        (
+          actionStep.dependsOnCapabilities ??
+          []
+        ).filter(
+          (capability) =>
+            plannedCapabilities.has(
+              capability
+            )
+        )
+      );
+
+    const dependsOnKeys =
+      selected
+        .filter(
+          (executionStep) =>
+            executionStep.kind ===
+              "AGENT" &&
+            executionStep.satisfies.some(
+              (capability) =>
+                dependencyCapabilities.has(
+                  capability
+                )
+            )
+        )
+        .map(
+          (executionStep) =>
+            executionStep.key
+        );
+
+    const requiredCapabilities =
+      actionStep.required
+        ? [
+            actionStep.capability,
+          ]
+        : [];
+
+    const optionalCapabilities =
+      actionStep.required
+        ? []
+        : [
+            actionStep.capability,
+          ];
+
+    const executionStep:
+      ActionExecutionStep = {
+        kind:
+          "ACTION",
+
+        key:
+          `action:${actionStep.action}:${actionStep.capability}`,
+
+        dependsOnKeys,
+
+        action:
+          actionStep.action,
+
+        satisfies: [
+          actionStep.capability,
+        ],
+
+        requiredCapabilities,
+
+        optionalCapabilities,
+      };
+
+    selected.push(
+      executionStep
     );
   }
 
@@ -1124,6 +1246,34 @@ console.warn(
    * Resolve capabilities against Agent Registry
    * ------------------------------------------------
    */
+  const alreadySatisfiedCapabilities =
+  new Set(
+    input.constraints
+      ?.alreadySatisfiedCapabilities ??
+      []
+  );
+
+const capabilitiesToResolve =
+  generatedPlan.capabilities.filter(
+    (
+      planned
+    ) =>
+      !alreadySatisfiedCapabilities.has(
+        planned.capability
+      )
+  );
+
+if (
+  alreadySatisfiedCapabilities.size >
+  0
+) {
+  console.log(
+    "[Orchestrator] Reusing already-satisfied capabilities:",
+    [
+      ...alreadySatisfiedCapabilities,
+    ]
+  );
+}
 
   const resolvedSteps:
     ResolvedPlanStep[] =
@@ -1131,8 +1281,50 @@ console.warn(
 
   for (
     const planned of
-    generatedPlan.capabilities
+    capabilitiesToResolve
   ) {
+    const definition =
+      getCapabilityById(
+        planned.capability
+      );
+
+    if (!definition) {
+      throw new Error(
+        `ORCHESTRATOR_UNKNOWN_CAPABILITY:${planned.capability}`
+      );
+    }
+
+    if (
+      definition.provider.type ===
+      "ACTION"
+    ) {
+      resolvedSteps.push({
+        capability:
+          planned.capability,
+
+        reason:
+          planned.reason,
+
+        required:
+          planned.required,
+
+        providerType:
+          "ACTION",
+
+        action:
+          definition.provider.action,
+
+        dependsOnCapabilities:
+          definition.provider.dependsOnCapabilities ??
+          [],
+
+        candidates:
+          [],
+      });
+
+      continue;
+    }
+
     const matches =
       await discoverAgents({
         capability:
@@ -1157,6 +1349,12 @@ console.warn(
 
           capabilities:
             agent.capabilities,
+
+          inputSchema:
+            (
+              agent.inputSchema ??
+              {}
+            ) as ResolvedAgent["inputSchema"],
         })
       );
 
@@ -1170,6 +1368,9 @@ console.warn(
       required:
         planned.required,
 
+      providerType:
+        "AGENT",
+
       candidates,
     });
   }
@@ -1179,6 +1380,8 @@ console.warn(
       .filter(
         (step) =>
           step.required &&
+          step.providerType ===
+            "AGENT" &&
           step.candidates.length ===
             0
       )
@@ -1192,6 +1395,8 @@ console.warn(
       .filter(
         (step) =>
           !step.required &&
+          step.providerType ===
+            "AGENT" &&
           step.candidates.length ===
             0
       )
@@ -1205,14 +1410,49 @@ console.warn(
       resolvedSteps
     );
 
-  const executable =
-    unresolvedCapabilities.length ===
-      0 &&
-    executionSteps.length >
-      0;
+    const missingInputs =
+  resolveMissingOrchestrationInputs(
+    executionSteps,
+    input.context ??
+      {}
+  );
+
+  const satisfiedByReuse =
+  unresolvedCapabilities.length ===
+    0 &&
+  missingInputs.length ===
+    0 &&
+  generatedPlan.capabilities.length >
+    0 &&
+  executionSteps.length ===
+    0 &&
+  alreadySatisfiedCapabilities.size >
+    0;
+
+const executable =
+  unresolvedCapabilities.length ===
+    0 &&
+  missingInputs.length ===
+    0 &&
+  executionSteps.length >
+    0;
+
+  const agentExecutionCount =
+    executionSteps.filter(
+      (step) =>
+        step.kind ===
+        "AGENT"
+    ).length;
+
+  const actionExecutionCount =
+    executionSteps.filter(
+      (step) =>
+        step.kind ===
+        "ACTION"
+    ).length;
 
   console.log(
-    `[Orchestrator] Plan resolved: ${executionSteps.length} agent(s), ${unresolvedCapabilities.length} missing required capability/capabilities`
+    `[Orchestrator] Plan resolved: ${agentExecutionCount} agent step(s), ${actionExecutionCount} action step(s), ${unresolvedCapabilities.length} missing required capability/capabilities`
   );
 
   return {
@@ -1228,8 +1468,12 @@ console.warn(
 
     executable,
 
+    satisfiedByReuse,
+
     unresolvedCapabilities,
 
     unresolvedOptionalCapabilities,
+
+    missingInputs,
   };
 }

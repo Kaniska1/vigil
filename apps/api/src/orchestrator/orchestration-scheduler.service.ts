@@ -39,49 +39,614 @@ type SchedulerStep =
       SchedulerRun | null;
   };
 
+type ExecutionContextResult = {
+  stepId: string;
+
+  position: number;
+
+  iteration: number;
+
+  agent: {
+    id: string;
+    slug: string;
+    name: string;
+  } | null;
+
+  capabilities:
+    string[];
+
+  result:
+    unknown;
+
+  truncated?:
+    boolean;
+};
+
+type RankedReusableResult = {
+  step:
+    SchedulerStep;
+
+  score:
+    number;
+};
+
+/*
+ * --------------------------------------------------
+ * Memory selection limits
+ * --------------------------------------------------
+ */
+
+const MAX_REUSED_RESULTS =
+  3;
+
+/*
+ * Maximum historical context we allow into one
+ * agent execution.
+ *
+ * This is character-based rather than token-based
+ * because it is deterministic, provider-independent
+ * and costs nothing to calculate.
+ */
+const MAX_REUSED_CONTEXT_CHARS =
+  8_000;
+
+/*
+ * Prevent one enormous historical result from
+ * consuming the entire memory budget.
+ */
+const MAX_SINGLE_REUSED_RESULT_CHARS =
+  3_000;
+
 function asObject(
   value: unknown
 ): JsonObject {
   if (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
+    typeof value ===
+      "object" &&
+    value !==
+      null &&
+    !Array.isArray(
+      value
+    )
   ) {
-    return value as JsonObject;
+    return value as
+      JsonObject;
   }
 
   return {};
 }
 
+function unique(
+  values:
+    string[]
+): string[] {
+  return [
+    ...new Set(
+      values
+    ),
+  ];
+}
+
+function stringifySafely(
+  value: unknown
+): string {
+  try {
+    return JSON.stringify(
+      value
+    );
+  } catch {
+    return String(
+      value
+    );
+  }
+}
+
+function truncateString(
+  value: string,
+
+  maxLength: number
+): string {
+  if (
+    value.length <=
+    maxLength
+  ) {
+    return value;
+  }
+
+  return `${value.slice(
+    0,
+    Math.max(
+      0,
+      maxLength -
+        20
+    )
+  )}...[truncated]`;
+}
+
+/*
+ * --------------------------------------------------
+ * Capability tokenization
+ * --------------------------------------------------
+ */
+
+function tokenizeCapability(
+  capability:
+    string
+): string[] {
+  return capability
+    .toLowerCase()
+    .split(
+      /[^a-z0-9]+/
+    )
+    .map(
+      (
+        token
+      ) =>
+        token.trim()
+    )
+    .filter(
+      Boolean
+    );
+}
+
+/*
+ * --------------------------------------------------
+ * Capability relevance
+ * --------------------------------------------------
+ *
+ * Exact match = strong signal.
+ *
+ * Shared capability token = weaker signal.
+ */
+function scoreCapabilityRelevance(
+  historicalCapabilities:
+    string[],
+
+  targetCapabilities:
+    string[]
+): number {
+  if (
+    historicalCapabilities.length ===
+      0 ||
+    targetCapabilities.length ===
+      0
+  ) {
+    return 0;
+  }
+
+  let score =
+    0;
+
+  const targetSet =
+    new Set(
+      targetCapabilities
+    );
+
+  for (
+    const capability of
+    historicalCapabilities
+  ) {
+    if (
+      targetSet.has(
+        capability
+      )
+    ) {
+      score +=
+        10;
+    }
+  }
+
+  const historicalTokens =
+    new Set(
+      historicalCapabilities.flatMap(
+        tokenizeCapability
+      )
+    );
+
+  const targetTokens =
+    new Set(
+      targetCapabilities.flatMap(
+        tokenizeCapability
+      )
+    );
+
+  for (
+    const token of
+    historicalTokens
+  ) {
+    if (
+      targetTokens.has(
+        token
+      )
+    ) {
+      score +=
+        2;
+    }
+  }
+
+  return score;
+}
+
+/*
+ * --------------------------------------------------
+ * Current DAG results
+ * --------------------------------------------------
+ */
+
+function buildUpstreamResults(
+  dependencies:
+    SchedulerStep[]
+): ExecutionContextResult[] {
+  return dependencies.map(
+    (
+      dependency
+    ) => ({
+      stepId:
+        dependency.id,
+
+      position:
+        dependency.position,
+
+      iteration:
+        dependency.iteration,
+
+      agent:
+        dependency.agent
+          ? {
+              id:
+                dependency.agent.id,
+
+              slug:
+                dependency.agent.slug,
+
+              name:
+                dependency.agent.name,
+            }
+          : null,
+
+      capabilities:
+        dependency.satisfies,
+
+      result:
+        dependency.run
+          ?.result ??
+        null,
+    })
+  );
+}
+
+/*
+ * --------------------------------------------------
+ * Historical memory ranking
+ * --------------------------------------------------
+ */
+
+function rankReusableSteps(
+  steps:
+    SchedulerStep[],
+
+  currentStep:
+    SchedulerStep
+): RankedReusableResult[] {
+  const historicalSuccessfulSteps =
+    steps.filter(
+      (
+        candidate
+      ) =>
+        candidate.iteration <
+          currentStep.iteration &&
+        candidate.status ===
+          "SUCCESS" &&
+        candidate.run !==
+          null
+    );
+
+  if (
+    historicalSuccessfulSteps.length ===
+    0
+  ) {
+    return [];
+  }
+
+  const targetCapabilities =
+    unique([
+      ...currentStep.satisfies,
+
+      ...currentStep.requiredCapabilities,
+
+      ...currentStep.optionalCapabilities,
+    ]);
+
+  const ranked =
+    historicalSuccessfulSteps
+      .map(
+        (
+          candidate
+        ): RankedReusableResult => ({
+          step:
+            candidate,
+
+          score:
+            scoreCapabilityRelevance(
+              candidate.satisfies,
+              targetCapabilities
+            ),
+        })
+      )
+      .sort(
+        (
+          left,
+          right
+        ) => {
+          if (
+            left.score !==
+            right.score
+          ) {
+            return (
+              right.score -
+              left.score
+            );
+          }
+
+          if (
+            left.step.iteration !==
+            right.step.iteration
+          ) {
+            return (
+              right.step.iteration -
+              left.step.iteration
+            );
+          }
+
+          return (
+            right.step.position -
+            left.step.position
+          );
+        }
+      );
+
+  const relevant =
+    ranked.filter(
+      (
+        item
+      ) =>
+        item.score >
+        0
+    );
+
+  /*
+   * Prefer relevant memories.
+   *
+   * If absolutely nothing matches, retain only the
+   * most recent success for minimal continuity.
+   */
+  return relevant.length >
+    0
+    ? relevant.slice(
+        0,
+        MAX_REUSED_RESULTS
+      )
+    : ranked.slice(
+        0,
+        1
+      );
+}
+
+/*
+ * --------------------------------------------------
+ * Historical memory budgeting
+ * --------------------------------------------------
+ *
+ * Important:
+ *
+ * We do NOT mutate the persisted Run.result.
+ *
+ * We only create a compact execution-context
+ * representation before handing memory to another
+ * agent.
+ */
+function budgetReusableResults(
+  ranked:
+    RankedReusableResult[]
+): ExecutionContextResult[] {
+  const results:
+    ExecutionContextResult[] =
+    [];
+
+  let remainingBudget =
+    MAX_REUSED_CONTEXT_CHARS;
+
+  for (
+    const item of
+    ranked
+  ) {
+    if (
+      remainingBudget <=
+      0
+    ) {
+      break;
+    }
+
+    const step =
+      item.step;
+
+    const rawResult =
+      step.run?.result ??
+      null;
+
+    const serialized =
+      stringifySafely(
+        rawResult
+      );
+
+    /*
+     * Each individual result has its own ceiling,
+     * but it also cannot exceed whatever remains in
+     * the total context budget.
+     */
+    const allowedChars =
+      Math.min(
+        MAX_SINGLE_REUSED_RESULT_CHARS,
+        remainingBudget
+      );
+
+    if (
+      allowedChars <=
+      0
+    ) {
+      break;
+    }
+
+    const truncated =
+      serialized.length >
+      allowedChars;
+
+    const budgetedResult =
+      truncated
+        ? {
+            truncated:
+              true,
+
+            preview:
+              truncateString(
+                serialized,
+                allowedChars
+              ),
+          }
+        : rawResult;
+
+    /*
+     * Use the actual serialized size of what we are
+     * injecting, not the original result.
+     */
+    const consumed =
+      stringifySafely(
+        budgetedResult
+      ).length;
+
+    if (
+      consumed >
+      remainingBudget
+    ) {
+      continue;
+    }
+
+    results.push({
+      stepId:
+        step.id,
+
+      position:
+        step.position,
+
+      iteration:
+        step.iteration,
+
+      agent:
+        step.agent
+          ? {
+              id:
+                step.agent.id,
+
+              slug:
+                step.agent.slug,
+
+              name:
+                step.agent.name,
+            }
+          : null,
+
+      capabilities:
+        step.satisfies,
+
+      result:
+        budgetedResult,
+
+      truncated:
+        truncated
+          ? true
+          : undefined,
+    });
+
+    remainingBudget -=
+      consumed;
+  }
+
+  return results;
+}
+
+/*
+ * --------------------------------------------------
+ * Complete memory retrieval pipeline
+ * --------------------------------------------------
+ */
+
+function buildReusedResults(
+  steps:
+    SchedulerStep[],
+
+  currentStep:
+    SchedulerStep
+): ExecutionContextResult[] {
+  const ranked =
+    rankReusableSteps(
+      steps,
+      currentStep
+    );
+
+  if (
+    ranked.length ===
+    0
+  ) {
+    return [];
+  }
+
+  return budgetReusableResults(
+    ranked
+  );
+}
+
 export async function scheduleReadyOrchestrationSteps(
-  orchestrationId: string
+  orchestrationId:
+    string
 ): Promise<void> {
   const orchestration =
     await prisma.orchestrationRun.findUnique({
       where: {
-        id: orchestrationId,
+        id:
+          orchestrationId,
       },
 
       include: {
         steps: {
           orderBy: {
-            position: "asc",
+            position:
+              "asc",
           },
 
           include: {
             agent: {
               select: {
-                id: true,
-                slug: true,
-                name: true,
+                id:
+                  true,
+
+                slug:
+                  true,
+
+                name:
+                  true,
               },
             },
 
             run: {
               select: {
-                id: true,
-                status: true,
-                result: true,
+                id:
+                  true,
+
+                status:
+                  true,
+
+                result:
+                  true,
               },
             },
           },
@@ -102,10 +667,6 @@ export async function scheduleReadyOrchestrationSteps(
     return;
   }
 
-  /*
-   * Explicit local type prevents TS from
-   * losing callback inference further down.
-   */
   const steps =
     orchestration.steps as
       SchedulerStep[];
@@ -116,15 +677,17 @@ export async function scheduleReadyOrchestrationSteps(
     );
 
   for (
-    const step of steps
+    const step of
+    steps
   ) {
     /*
-     * This step has already been
-     * claimed/scheduled.
+     * Already claimed or terminal.
      */
     if (
-      step.runId !== null ||
-      step.status !== "PENDING"
+      step.runId !==
+        null ||
+      step.status !==
+        "PENDING"
     ) {
       continue;
     }
@@ -136,11 +699,13 @@ export async function scheduleReadyOrchestrationSteps(
     }
 
     /*
-     * Resolve dependency positions into
-     * actual orchestration steps.
+     * ------------------------------------------------
+     * Resolve explicit current-DAG dependencies
+     * ------------------------------------------------
      */
     const dependencies:
-      SchedulerStep[] = [];
+      SchedulerStep[] =
+      [];
 
     for (
       const dependencyPosition of
@@ -149,8 +714,7 @@ export async function scheduleReadyOrchestrationSteps(
       const dependency =
         steps.find(
           (
-            candidate:
-              SchedulerStep
+            candidate
           ) =>
             candidate.position ===
             dependencyPosition
@@ -167,16 +731,10 @@ export async function scheduleReadyOrchestrationSteps(
       );
     }
 
-    /*
-     * Root steps have zero dependencies,
-     * therefore every([]) correctly
-     * evaluates to true.
-     */
     const dependenciesReady =
       dependencies.every(
         (
-          dependency:
-            SchedulerStep
+          dependency
         ) =>
           dependency.status ===
           "SUCCESS"
@@ -189,73 +747,92 @@ export async function scheduleReadyOrchestrationSteps(
     }
 
     /*
-     * Gather results from completed
-     * upstream steps.
+     * Current graph outputs.
      */
     const upstreamResults =
-      dependencies.map(
-        (
-          dependency:
-            SchedulerStep
-        ) => ({
-          stepId:
-            dependency.id,
-
-          position:
-            dependency.position,
-
-          agent:
-            dependency.agent
-              ? {
-                  id:
-                    dependency.agent.id,
-
-                  slug:
-                    dependency.agent.slug,
-
-                  name:
-                    dependency.agent.name,
-                }
-              : null,
-
-          result:
-            dependency.run
-              ?.result ??
-            null,
-        })
+      buildUpstreamResults(
+        dependencies
       );
 
+    /*
+     * Previous orchestration knowledge.
+     *
+     * retrieve
+     * → rank
+     * → select
+     * → budget
+     */
+    const reusedResults =
+      buildReusedResults(
+        steps,
+        step
+      );
+
+    const reusedCapabilities =
+      unique(
+        reusedResults.flatMap(
+          (
+            result
+          ) =>
+            result.capabilities
+        )
+      );
+
+    const truncatedMemoryCount =
+      reusedResults.filter(
+        (
+          result
+        ) =>
+          result.truncated ===
+          true
+      ).length;
+
+    const reusedContextChars =
+      stringifySafely(
+        reusedResults
+      ).length;
+
+    /*
+     * ------------------------------------------------
+     * Execution input
+     * ------------------------------------------------
+     */
     const input:
       JsonObject = {
       ...originalContext,
 
+      /*
+       * Explicit graph dependencies.
+       */
       upstreamResults,
+
+      /*
+       * Selected historical memory.
+       */
+      reusedResults,
     };
 
     /*
-     * Atomically claim this step.
-     *
-     * The explicit Prisma.TransactionClient
-     * fixes the recurring implicit-any error
-     * on `tx`.
+     * ------------------------------------------------
+     * Atomic claim
+     * ------------------------------------------------
      */
     const run =
       await prisma.$transaction(
         async (
           tx:
             Prisma.TransactionClient
-        ): Promise<Run | null> => {
+        ): Promise<
+          Run | null
+        > => {
           const currentStep =
             await tx.orchestrationStep.findUnique({
               where: {
-                id: step.id,
+                id:
+                  step.id,
               },
             });
 
-          /*
-           * Another scheduler invocation may
-           * already have claimed this step.
-           */
           if (
             !currentStep ||
             currentStep.runId !==
@@ -282,7 +859,8 @@ export async function scheduleReadyOrchestrationSteps(
 
           await tx.orchestrationStep.update({
             where: {
-              id: step.id,
+              id:
+                step.id,
             },
 
             data: {
@@ -303,13 +881,17 @@ export async function scheduleReadyOrchestrationSteps(
       );
 
     /*
-     * The step was already claimed by
-     * another scheduler invocation.
+     * Another scheduler invocation won the claim.
      */
     if (!run) {
       continue;
     }
 
+    /*
+     * ------------------------------------------------
+     * Observability
+     * ------------------------------------------------
+     */
     await traceOrchestration(
       orchestration.id,
       "AGENT_SELECTED",
@@ -323,6 +905,9 @@ export async function scheduleReadyOrchestrationSteps(
 
         position:
           step.position,
+
+        iteration:
+          step.iteration,
 
         dependsOnPositions:
           step.dependsOnPositions,
@@ -341,9 +926,29 @@ export async function scheduleReadyOrchestrationSteps(
 
         optionalCapabilities:
           step.optionalCapabilities,
+
+        upstreamResultCount:
+          upstreamResults.length,
+
+        reusedResultCount:
+          reusedResults.length,
+
+        reusedCapabilities,
+
+        reusedContextChars,
+
+        truncatedMemoryCount,
+
+        memoryBudgetChars:
+          MAX_REUSED_CONTEXT_CHARS,
       }
     );
 
+    /*
+     * ------------------------------------------------
+     * Queue execution
+     * ------------------------------------------------
+     */
     await runQueue.add(
       "execute-agent-run",
       {
@@ -372,7 +977,8 @@ export async function scheduleReadyOrchestrationSteps(
 
         removeOnComplete: {
           age:
-            60 * 60,
+            60 *
+            60,
         },
 
         removeOnFail: {

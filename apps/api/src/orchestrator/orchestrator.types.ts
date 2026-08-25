@@ -1,3 +1,7 @@
+import type {
+  AgentInputSchema,
+} from "../agents/agent-definition.types.js";
+
 export type OrchestratorGoalInput = {
   goal: string;
 
@@ -5,6 +9,11 @@ export type OrchestratorGoalInput = {
     string,
     unknown
   >;
+
+  constraints?: {
+    alreadySatisfiedCapabilities?:
+      string[];
+  };
 };
 
 export type PlannedCapability = {
@@ -28,6 +37,9 @@ export type ResolvedAgent = {
 
   capabilities:
     string[];
+
+  inputSchema:
+    AgentInputSchema;
 };
 
 export type ResolvedPlanStep = {
@@ -35,11 +47,20 @@ export type ResolvedPlanStep = {
   reason: string;
   required: boolean;
 
+  providerType:
+    | "AGENT"
+    | "ACTION";
+
+  action?: string;
+
+  dependsOnCapabilities?:
+    string[];
+
   candidates:
     ResolvedAgent[];
 };
 
-export type AgentExecutionStep = {
+type BaseExecutionStep = {
   /*
    * Stable graph-local identity.
    *
@@ -59,8 +80,6 @@ export type AgentExecutionStep = {
    */
   dependsOnKeys: string[];
 
-  agent: ResolvedAgent;
-
   satisfies:
     string[];
 
@@ -71,6 +90,24 @@ export type AgentExecutionStep = {
     string[];
 };
 
+export type AgentExecutionStep =
+  BaseExecutionStep & {
+    kind: "AGENT";
+
+    agent: ResolvedAgent;
+  };
+
+export type ActionExecutionStep =
+  BaseExecutionStep & {
+    kind: "ACTION";
+
+    action: string;
+  };
+
+export type OrchestrationExecutionStep =
+  | AgentExecutionStep
+  | ActionExecutionStep;
+
 export type OrchestratorPlan = {
   goal: string;
 
@@ -80,13 +117,63 @@ export type OrchestratorPlan = {
     ResolvedPlanStep[];
 
   executionSteps:
-    AgentExecutionStep[];
+    OrchestrationExecutionStep[];
 
   executable: boolean;
 
+  satisfiedByReuse: boolean;
+  
   unresolvedCapabilities:
     string[];
 
   unresolvedOptionalCapabilities:
     string[];
+
+  missingInputs:
+    MissingOrchestrationInput[];
+};
+
+export type MissingOrchestrationInput = {
+  key:
+    string;
+
+  type:
+    | "string"
+    | "number"
+    | "boolean"
+    | "json"
+    | "file";
+
+  description:
+    string;
+
+  /*
+   * Used only for file inputs.
+   *
+   * Examples:
+   * ["pdf", "docx", "txt"]
+   * ["csv", "xlsx"]
+   * ["zip"]
+   */
+  acceptedFileTypes?:
+    string[];
+
+  /*
+   * Optional upper limit exposed by
+   * the agent's input contract.
+   */
+  maxFileSizeBytes?:
+    number;
+
+  requiredBy:
+    {
+      agentId:
+        string;
+
+      agentSlug:
+        string;
+
+      agentName:
+        string;
+    }[];
 };

@@ -5,7 +5,7 @@ import type {
 } from "@vigil/db";
 
 import type {
-  AgentExecutionStep,
+  OrchestrationExecutionStep,
   OrchestratorGoalInput,
 } from "./orchestrator.types.js";
 
@@ -13,17 +13,19 @@ import {
   createOrchestratorPlan,
 } from "./orchestrator.service.js";
 
-import {
-  createInitialOrchestrationMemory,
-} from "./orchestration-memory.service.js";
 
 import {
   traceOrchestration,
 } from "./orchestration-trace.service.js";
 
+import {
+  createInitialOrchestrationMemory,
+  recordOrchestrationDecision,
+} from "./orchestration-memory.service.js";
+
 type ExecutionGraphNode = {
   step:
-    AgentExecutionStep;
+    OrchestrationExecutionStep;
 
   position:
     number;
@@ -48,7 +50,7 @@ type ExecutionGraphNode = {
  */
 function buildExecutionGraph(
   executionSteps:
-    AgentExecutionStep[]
+    OrchestrationExecutionStep[]
 ): ExecutionGraphNode[] {
   const keyToPosition =
     new Map<
@@ -285,35 +287,47 @@ export async function createPersistentOrchestration(
           const node of graph
         ) {
           await tx.orchestrationStep.create({
-  data: {
-    orchestrationId:
-      created.id,
+            data: {
+              orchestrationId:
+                created.id,
 
-    agentId:
-      node.step.agent.id,
+              kind:
+                node.step.kind,
 
-    position:
-      node.position,
+              agentId:
+                node.step.kind ===
+                  "AGENT"
+                  ? node.step.agent.id
+                  : null,
 
-    iteration:
-      0,
+              actionName:
+                node.step.kind ===
+                  "ACTION"
+                  ? node.step.action
+                  : null,
 
-    dependsOnPositions:
-      node.dependsOnPositions,
+              position:
+                node.position,
 
-    status:
-      "PENDING",
+              iteration:
+                0,
 
-    satisfies:
-      node.step.satisfies,
+              dependsOnPositions:
+                node.dependsOnPositions,
 
-    requiredCapabilities:
-      node.step.requiredCapabilities,
+              status:
+                "PENDING",
 
-    optionalCapabilities:
-      node.step.optionalCapabilities,
-  },
-});
+              satisfies:
+                node.step.satisfies,
+
+              requiredCapabilities:
+                node.step.requiredCapabilities,
+
+              optionalCapabilities:
+                node.step.optionalCapabilities,
+            },
+          });
         }
 
         return created;
@@ -338,6 +352,9 @@ export async function createPersistentOrchestration(
       executable:
         plan.executable,
 
+      missingInputs:
+        plan.missingInputs,
+
       executionGraph:
         graph.map(
           (
@@ -355,8 +372,20 @@ export async function createPersistentOrchestration(
             dependsOnPositions:
               node.dependsOnPositions,
 
+            kind:
+              node.step.kind,
+
             agentSlug:
-              node.step.agent.slug,
+              node.step.kind ===
+                "AGENT"
+                ? node.step.agent.slug
+                : null,
+
+            actionName:
+              node.step.kind ===
+                "ACTION"
+                ? node.step.action
+                : null,
 
             satisfies:
               node.step.satisfies,
@@ -370,6 +399,51 @@ export async function createPersistentOrchestration(
         plan.unresolvedOptionalCapabilities,
     }
   );
+
+  await recordOrchestrationDecision({
+  orchestrationId:
+    orchestration.id,
+
+  type:
+    "PLAN_SELECTED",
+
+  reason:
+    plan.summary,
+
+  metadata: {
+    executable:
+      plan.executable,
+
+    selectedSteps:
+      plan.executionSteps.map(
+        (step) => ({
+          kind:
+            step.kind,
+
+          agentSlug:
+            step.kind ===
+              "AGENT"
+              ? step.agent.slug
+              : null,
+
+          actionName:
+            step.kind ===
+              "ACTION"
+              ? step.action
+              : null,
+
+          satisfies:
+            step.satisfies,
+
+          missingInputs:
+            plan.missingInputs,
+        })
+      ),
+
+    unresolvedCapabilities:
+      plan.unresolvedCapabilities,
+  },
+});
 
   return {
     orchestration,
