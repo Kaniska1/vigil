@@ -1,6 +1,7 @@
 export type VigilPermission =
-  | "github.read"
-  | "github.write";
+  | "repository:read"
+  | "pull_requests:read"
+  | "pull_requests:write";
 
 const TOOL_PERMISSION_MAP:
   Record<
@@ -8,13 +9,13 @@ const TOOL_PERMISSION_MAP:
     VigilPermission
   > = {
   "github.getPullRequest":
-    "github.read",
+    "pull_requests:read",
 
   "github.getPullRequestFiles":
-    "github.read",
+    "pull_requests:read",
 
   "github.createPullRequestReview":
-    "github.write",
+    "pull_requests:write",
 };
 
 export function getRequiredPermissionForTool(
@@ -32,8 +33,10 @@ export function isKnownPermission(
 ): value is VigilPermission {
   return (
     value ===
-      "github.read" ||
+      "repository:read" ||
     value ===
-      "github.write"
+      "pull_requests:read" ||
+    value ===
+      "pull_requests:write"
   );
 }

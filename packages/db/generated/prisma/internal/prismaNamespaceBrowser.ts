@@ -60,7 +60,8 @@ export const ModelName = {
   TraceEvent: 'TraceEvent',
   OrchestrationRun: 'OrchestrationRun',
   OrchestrationStep: 'OrchestrationStep',
-  OrchestrationEvent: 'OrchestrationEvent'
+  OrchestrationEvent: 'OrchestrationEvent',
+  ApiKey: 'ApiKey'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -141,6 +142,11 @@ export const AgentScalarFieldEnum = {
   inputSchema: 'inputSchema',
   outputSchema: 'outputSchema',
   category: 'category',
+  source: 'source',
+  endpointUrl: 'endpointUrl',
+  visibility: 'visibility',
+  creatorId: 'creatorId',
+  publishedAt: 'publishedAt',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -231,6 +237,24 @@ export const OrchestrationEventScalarFieldEnum = {
 } as const
 
 export type OrchestrationEventScalarFieldEnum = (typeof OrchestrationEventScalarFieldEnum)[keyof typeof OrchestrationEventScalarFieldEnum]
+
+
+export const ApiKeyScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  prefix: 'prefix',
+  keyHash: 'keyHash',
+  userId: 'userId',
+  lastUsedAt: 'lastUsedAt',
+  revokedAt: 'revokedAt',
+  encryptedKey: 'encryptedKey',
+  encryptionIv: 'encryptionIv',
+  encryptionTag: 'encryptionTag',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ApiKeyScalarFieldEnum = (typeof ApiKeyScalarFieldEnum)[keyof typeof ApiKeyScalarFieldEnum]
 
 
 export const SortOrder = {

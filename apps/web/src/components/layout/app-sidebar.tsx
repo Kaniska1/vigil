@@ -6,7 +6,6 @@ import { useState } from "react";
 import {
   Activity,
   Bot,
-  ChevronDown,
   Code2,
   Network,
   Plus,
@@ -14,6 +13,8 @@ import {
   Search,
   Settings,
   Sparkles,
+  Store,
+  UploadCloud,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +26,8 @@ const NAV_ITEMS = [
     icon: Bot,
   },
   {
-    href: "/orchestrator",
-    label: "Orchestrator",
+    href: "/orchestrations",
+    label: "Orchestrations",
     icon: Network,
   },
   {
@@ -39,10 +40,6 @@ const NAV_ITEMS = [
 export function AppSidebar() {
   const pathname = usePathname();
 
-  const [
-    workspaceOpen,
-    setWorkspaceOpen,
-  ] = useState(false);
 
   const [
     searchOpen,
@@ -61,26 +58,19 @@ export function AppSidebar() {
       "
     >
       <div className="flex h-full min-h-0 flex-col">
-        {/* ─────────────────────────────────────────────
-         * WORKSPACE SWITCHER
-         * ───────────────────────────────────────────── */}
-        <div className="relative h-[58px] shrink-0 px-2 pt-2">
-          <button
-            type="button"
-            aria-expanded={
-              workspaceOpen
-            }
-            onClick={() =>
-              setWorkspaceOpen(
-                (open) => !open
-              )
-            }
+        {/* Current workspace identity.
+         *
+         * Vigil does not yet have a real Workspace entity,
+         * membership model, or workspace-scoped persistence.
+         * We therefore keep this as identity/branding rather
+         * than exposing fake "New workspace" or duplicate
+         * "Workspace settings" actions.
+         */}
+        <div className="h-[58px] shrink-0 px-2 pt-2">
+          <div
             className="
               flex h-10 w-full items-center gap-2
               rounded-[11px] px-2.5
-              text-left
-              transition-colors
-              hover:bg-[var(--hover)]
             "
           >
             <span
@@ -120,125 +110,10 @@ export function AppSidebar() {
                   text-[var(--ink-3)]
                 "
               >
-                Agent Runtime
+                Developer workspace
               </span>
             </span>
-
-            <ChevronDown
-              className={`
-                size-3.5 shrink-0
-                text-[var(--ink-3)]
-                transition-transform
-                duration-200
-                ${
-                  workspaceOpen
-                    ? "rotate-180"
-                    : ""
-                }
-              `}
-            />
-          </button>
-
-          {workspaceOpen ? (
-            <div
-              className="
-                absolute left-2 top-[54px]
-                z-50
-                w-[216px]
-                rounded-[14px]
-                border border-[var(--line)]
-                bg-[var(--surface-raised)]
-                p-1.5
-                shadow-[0_18px_55px_rgba(0,0,0,.55)]
-              "
-            >
-              <div
-                className="
-                  flex h-10 items-center gap-2
-                  rounded-[9px]
-                  bg-[var(--hover)]
-                  px-2.5
-                "
-              >
-                <span
-                  className="
-                    flex size-6 items-center
-                    justify-center
-                    rounded-[7px]
-                    bg-[var(--accent-300)]
-                    text-[10px]
-                    font-black
-                    text-[var(--accent-950)]
-                  "
-                >
-                  V
-                </span>
-
-                <span
-                  className="
-                    min-w-0 flex-1 truncate
-                    text-[13px]
-                    font-bold
-                    text-[var(--ink)]
-                  "
-                >
-                  Vigil workspace
-                </span>
-
-                <Badge
-                  variant="secondary"
-                  className="
-                    h-5 px-1.5
-                    text-[9px]
-                  "
-                >
-                  LOCAL
-                </Badge>
-              </div>
-
-              <div className="my-1.5 h-px bg-[var(--line)]" />
-
-              <button
-                type="button"
-                className="
-                  flex h-9 w-full
-                  items-center gap-2
-                  rounded-[9px]
-                  px-2.5
-                  text-[12.5px]
-                  font-semibold
-                  text-[var(--ink-2)]
-                  transition-colors
-                  hover:bg-[var(--hover)]
-                  hover:text-[var(--ink)]
-                "
-              >
-                <Plus className="size-3.5" />
-
-                New workspace
-              </button>
-
-              <button
-                type="button"
-                className="
-                  flex h-9 w-full
-                  items-center gap-2
-                  rounded-[9px]
-                  px-2.5
-                  text-[12.5px]
-                  font-semibold
-                  text-[var(--ink-2)]
-                  transition-colors
-                  hover:bg-[var(--hover)]
-                  hover:text-[var(--ink)]
-                "
-              >
-                <Settings className="size-3.5" />
-
-                Workspace settings
-              </button>
-            </div>
-          ) : null}
+          </div>
         </div>
 
         {/* ─────────────────────────────────────────────
@@ -246,7 +121,7 @@ export function AppSidebar() {
          * ───────────────────────────────────────────── */}
         <div className="px-2 pb-2">
           <Link
-            href="/orchestrator"
+            href="/orchestrations/new"
             className="
               group
               flex h-9 items-center gap-2
@@ -452,9 +327,9 @@ export function AppSidebar() {
           ) : null}
 
           <div className="space-y-1">
-            <button
-              type="button"
-              className="
+            <Link
+              href="/agents/mine"
+              className={`
                 flex h-9 w-full
                 items-center gap-2
                 rounded-[10px]
@@ -462,25 +337,22 @@ export function AppSidebar() {
                 text-left
                 text-[13px]
                 font-semibold
-                text-[var(--ink-2)]
                 transition-colors
-                hover:bg-[var(--hover)]
-                hover:text-[var(--ink)]
-              "
+                ${
+                  pathname === "/agents/mine" ||
+                  pathname.startsWith("/agents/mine/")
+                    ? "bg-[var(--hover-2)] text-[var(--ink)]"
+                    : "text-[var(--ink-2)] hover:bg-[var(--hover)] hover:text-[var(--ink)]"
+                }
+              `}
             >
-              <Code2
-                className="
-                  size-4
-                  text-[var(--ink-3)]
-                "
-              />
+              <Store className="size-4 text-[var(--ink-3)]" />
+              My Agents
+            </Link>
 
-              API & SDK
-            </button>
-
-            <button
-              type="button"
-              className="
+            <Link
+              href="/agents/publish"
+              className={`
                 flex h-9 w-full
                 items-center gap-2
                 rounded-[10px]
@@ -488,11 +360,61 @@ export function AppSidebar() {
                 text-left
                 text-[13px]
                 font-semibold
-                text-[var(--ink-2)]
                 transition-colors
-                hover:bg-[var(--hover)]
-                hover:text-[var(--ink)]
-              "
+                ${
+                  pathname === "/agents/publish" ||
+                  pathname.startsWith("/agents/publish/")
+                    ? "bg-[var(--hover-2)] text-[var(--ink)]"
+                    : "text-[var(--ink-2)] hover:bg-[var(--hover)] hover:text-[var(--ink)]"
+                }
+              `}
+            >
+              <UploadCloud className="size-4 text-[var(--ink-3)]" />
+              Publish Agent
+            </Link>
+
+            <Link
+  href="/developer/api-sdk"
+  className={`
+    flex h-9 w-full
+    items-center gap-2
+    rounded-[10px]
+    px-2.5
+    text-left
+    text-[13px]
+    font-semibold
+    transition-colors
+    ${
+      pathname === "/developer/api-sdk" ||
+      pathname.startsWith("/developer/api-sdk/")
+        ? "bg-[var(--hover-2)] text-[var(--ink)]"
+        : "text-[var(--ink-2)] hover:bg-[var(--hover)] hover:text-[var(--ink)]"
+    }
+  `}
+>
+  <Code2 className="size-4 text-[var(--ink-3)]" />
+  API & SDK
+</Link>
+
+            <Link
+              href="/settings"
+              className={`
+                relative
+                flex h-9 w-full
+                items-center gap-2
+                rounded-[10px]
+                px-2.5
+                text-left
+                text-[13px]
+                font-semibold
+                transition-colors
+                ${
+                  pathname === "/settings" ||
+                  pathname.startsWith("/settings/")
+                    ? "bg-[var(--hover-2)] text-[var(--ink)]"
+                    : "text-[var(--ink-2)] hover:bg-[var(--hover)] hover:text-[var(--ink)]"
+                }
+              `}
             >
               <Settings
                 className="
@@ -502,7 +424,7 @@ export function AppSidebar() {
               />
 
               Settings
-            </button>
+            </Link>
           </div>
         </div>
 

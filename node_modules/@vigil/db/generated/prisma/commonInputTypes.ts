@@ -186,6 +186,20 @@ export type JsonNullableFilterBase<$PrismaModel = never> = {
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
 }
 
+export type EnumAgentSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentSource | Prisma.EnumAgentSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentSourceFilter<$PrismaModel> | $Enums.AgentSource
+}
+
+export type EnumAgentVisibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentVisibility | Prisma.EnumAgentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentVisibilityFilter<$PrismaModel> | $Enums.AgentVisibility
+}
+
 export type BoolFilter<$PrismaModel = never> = {
   equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
   not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
@@ -216,6 +230,26 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedJsonNullableFilter<$PrismaModel>
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>
+}
+
+export type EnumAgentSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentSource | Prisma.EnumAgentSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentSourceWithAggregatesFilter<$PrismaModel> | $Enums.AgentSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgentSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgentSourceFilter<$PrismaModel>
+}
+
+export type EnumAgentVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentVisibility | Prisma.EnumAgentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.AgentVisibility
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgentVisibilityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgentVisibilityFilter<$PrismaModel>
 }
 
 export type BoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -516,6 +550,20 @@ export type NestedFloatNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
 }
 
+export type NestedEnumAgentSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentSource | Prisma.EnumAgentSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentSourceFilter<$PrismaModel> | $Enums.AgentSource
+}
+
+export type NestedEnumAgentVisibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentVisibility | Prisma.EnumAgentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentVisibilityFilter<$PrismaModel> | $Enums.AgentVisibility
+}
+
 export type NestedBoolFilter<$PrismaModel = never> = {
   equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
   not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
@@ -543,6 +591,26 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumAgentSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentSource | Prisma.EnumAgentSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentSource[] | Prisma.ListEnumAgentSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentSourceWithAggregatesFilter<$PrismaModel> | $Enums.AgentSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgentSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgentSourceFilter<$PrismaModel>
+}
+
+export type NestedEnumAgentVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgentVisibility | Prisma.EnumAgentVisibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AgentVisibility[] | Prisma.ListEnumAgentVisibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAgentVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.AgentVisibility
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgentVisibilityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgentVisibilityFilter<$PrismaModel>
 }
 
 export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {

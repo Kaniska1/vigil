@@ -1,3 +1,24 @@
+export type AgentInputField = {
+  type:
+    | "string"
+    | "number"
+    | "boolean"
+    | "json"
+    | "file";
+
+  description?: string;
+  required?: boolean;
+
+  acceptedFileTypes?: string[];
+  maxFileSizeBytes?: number;
+};
+
+export type AgentInputSchema =
+  Record<
+    string,
+    AgentInputField
+  >;
+
 export type Agent = {
   id: string;
   slug: string;
@@ -8,6 +29,13 @@ export type Agent = {
   capabilities?: string[];
   tools?: string[];
   permissions?: string[];
+
+  inputSchema?: AgentInputSchema;
+
+  outputSchema?: Record<
+    string,
+    unknown
+  >;
 
   category?: string | null;
   isActive?: boolean;
@@ -49,9 +77,11 @@ export type CreateRunResponse = {
 };
 
 export type RunResult = {
-  output?: {
+  output?: Record<string, unknown> & {
     review?: string;
+    text?: string;
     model?: string;
+    runtime?: string;
     usage?: unknown;
   };
 };
@@ -192,10 +222,17 @@ export type OrchestratorPlan = {
   missingInputs: MissingOrchestrationInput[];
 };
 
+export type OrchestrationSettings = {
+  semanticEvaluation: boolean;
+  maxReplans: number;
+};
+
 export type CreateOrchestratorPlanInput = {
   goal: string;
 
   context?: Record<string, unknown>;
+
+  settings?: OrchestrationSettings;
 };
 
 /*
@@ -209,6 +246,8 @@ export type OrchestrationStatus =
   | "BLOCKED"
   | "READY"
   | "RUNNING"
+  | "EVALUATING"
+  | "REPLANNING"
   | "SUCCESS"
   | "FAILED"
   | "CANCELLED";
@@ -507,6 +546,26 @@ export async function executeOrchestration(
  * ORCHESTRATION STATE
  * ==================================================
  */
+
+export async function getOrchestrations(
+  limit = 50
+): Promise<OrchestrationDetails[]> {
+  const response =
+    await fetch(
+      `/api/orchestrator?limit=${encodeURIComponent(
+        String(limit)
+      )}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  return readResponse<OrchestrationDetails[]>(
+    response,
+    "Failed to fetch orchestrations"
+  );
+}
 
 export async function getOrchestration(
   orchestrationId: string

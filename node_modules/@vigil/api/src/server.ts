@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import agentRoutes from "./routes/agent.routes.js";
 import runRoutes from "./routes/run.routes.js";
 import orchestratorRoutes from "./routes/orchestrator.routes.js";
+import apiKeyRoutes from "./routes/api-key.routes.js";
 
 dotenv.config();
 
@@ -48,6 +49,11 @@ app.use(
 app.use(
   "/api/v1/orchestrator",
   orchestratorRoutes
+);
+
+app.use(
+  "/api/v1/api-keys",
+  apiKeyRoutes
 );
 
 app.listen(

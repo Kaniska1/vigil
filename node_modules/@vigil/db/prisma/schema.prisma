@@ -17,10 +17,12 @@ model User {
   emailVerified DateTime?
   image         String?
 
-  accounts       Account[]
-  sessions       Session[]
-  runs           Run[]
-  orchestrations OrchestrationRun[]
+  accounts        Account[]
+  sessions        Session[]
+  runs            Run[]
+  orchestrations  OrchestrationRun[]
+  publishedAgents Agent[]
+  apiKeys         ApiKey[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -79,6 +81,17 @@ model Agent {
   outputSchema Json?
 
   category String?
+
+  source AgentSource @default(FIRST_PARTY)
+
+  endpointUrl String?
+
+  visibility AgentVisibility @default(PUBLIC)
+
+  creatorId String?
+  creator   User?   @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+
+  publishedAt DateTime?
 
   isActive Boolean @default(true)
 
@@ -208,6 +221,16 @@ model OrchestrationEvent {
   createdAt DateTime @default(now())
 }
 
+enum AgentSource {
+  FIRST_PARTY
+  REMOTE
+}
+
+enum AgentVisibility {
+  PUBLIC
+  PRIVATE
+}
+
 enum RunStatus {
   PENDING
   RUNNING
@@ -255,4 +278,26 @@ enum OrchestrationEventType {
   STEP_FAILED
   ORCHESTRATION_COMPLETED
   ORCHESTRATION_FAILED
+}
+
+model ApiKey {
+  id String @id @default(cuid())
+
+  name    String
+  prefix  String
+  keyHash String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  encryptedKey  String?
+encryptionIv  String?
+encryptionTag String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

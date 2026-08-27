@@ -8,6 +8,10 @@ import {
   jwtVerify,
 } from "jose";
 
+import {
+  authenticateApiKey,
+} from "../services/api-key.service.js";
+
 const secret =
   process.env.VIGIL_API_SECRET;
 
@@ -18,12 +22,44 @@ if (!secret) {
 }
 
 const key =
-  new TextEncoder().encode(secret);
+  new TextEncoder().encode(
+    secret
+  );
 
 export type AuthenticatedRequest =
   Request & {
     userId?: string;
+
+    authType?:
+      | "SESSION"
+      | "API_KEY";
+
+    apiKeyId?: string;
   };
+
+async function authenticateSessionToken(
+  token: string
+) {
+  const {
+    payload,
+  } =
+    await jwtVerify(
+      token,
+      key
+    );
+
+  if (
+    typeof payload.userId !==
+      "string"
+  ) {
+    return null;
+  }
+
+  return {
+    userId:
+      payload.userId,
+  };
+}
 
 export async function requireAuth(
   req: AuthenticatedRequest,
@@ -39,41 +75,120 @@ export async function requireAuth(
       "Bearer "
     )
   ) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized",
-    });
+    return res
+      .status(401)
+      .json({
+        success: false,
+        message:
+          "Unauthorized",
+      });
   }
 
   const token =
-    authorization.slice(7);
+    authorization
+      .slice(7)
+      .trim();
 
   try {
-    const { payload } =
-      await jwtVerify(
-        token,
-        key
+    /*
+     * SDK/API keys are intentionally
+     * distinguishable from session JWTs.
+     */
+    if (
+      token.startsWith(
+        "vigil_"
+      )
+    ) {
+      const apiKeyAuth =
+        await authenticateApiKey(
+          token
+        );
+
+      if (!apiKeyAuth) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message:
+              "Invalid or revoked API key",
+          });
+      }
+
+      req.userId =
+        apiKeyAuth.userId;
+
+      req.apiKeyId =
+        apiKeyAuth.apiKeyId;
+
+      req.authType =
+        "API_KEY";
+
+      return next();
+    }
+
+    const session =
+      await authenticateSessionToken(
+        token
       );
 
-    if (
-      typeof payload.userId !==
-      "string"
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
+    if (!session) {
+      return res
+        .status(401)
+        .json({
+          success: false,
+          message:
+            "Invalid token",
+        });
     }
 
     req.userId =
-      payload.userId;
+      session.userId;
 
-    next();
+    req.authType =
+      "SESSION";
+
+    return next();
   } catch {
-    return res.status(401).json({
-      success: false,
-      message:
-        "Invalid or expired token",
-    });
+    return res
+      .status(401)
+      .json({
+        success: false,
+        message:
+          "Invalid or expired token",
+      });
   }
+}
+
+/*
+ * API-key management should require the
+ * signed-in dashboard/session flow.
+ *
+ * A leaked API key must not be able to
+ * create or revoke other API keys.
+ */
+export async function requireSessionAuth(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  await requireAuth(
+    req,
+    res,
+    () => {
+      if (
+        req.authType !==
+        "SESSION"
+      ) {
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message:
+              "Session authentication required",
+          });
+      }
+
+      next();
+    }
+  );
 }

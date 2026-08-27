@@ -6,7 +6,6 @@ import {
   Activity,
   Bot,
   Braces,
-  GitPullRequest,
   Play,
 } from "lucide-react";
 
@@ -107,10 +106,9 @@ export function AgentWorkspace({
       null
     );
 
-  async function handleRun(input: {
-    repository: string;
-    pullRequest: number;
-  }) {
+  async function handleRun(
+    input: Record<string, unknown>
+  ) {
     if (!selectedAgent) {
       return;
     }
@@ -368,7 +366,7 @@ export function AgentWorkspace({
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex size-12 items-center justify-center rounded-2xl border border-[#007fff]/25 bg-gradient-to-br from-[#263765] to-[#292343] text-[#99a5ff] shadow-[0_12px_32px_rgba(61,74,177,.18)]">
-                    <GitPullRequest className="size-5" />
+                    <Bot className="size-5" />
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -399,7 +397,13 @@ export function AgentWorkspace({
                   <TabsTrigger value="trace"><Braces /> Live trace {events.length ? <span className="ml-1 rounded-full bg-[#4800ff]/20 px-1.5 text-[10px] text-[#b699ff]">{events.length}</span> : null}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="playground">
-                  <AgentPlayground running={running} status={status} result={completedRun} onRun={handleRun} />
+                  <AgentPlayground
+                    agent={selectedAgent}
+                    running={running}
+                    status={status}
+                    result={completedRun}
+                    onRun={handleRun}
+                  />
                 </TabsContent>
                 <TabsContent value="trace">
                   <RunTrace runId={runId} status={status} events={events} />

@@ -14,6 +14,14 @@ import {
 } from "../services/run.service.js";
 
 import {
+  findAgentBySlug,
+} from "../services/agent-registry.service.js";
+
+import {
+  validateAgentInput,
+} from "../services/agent-input-validation.service.js";
+
+import {
   runQueue,
 } from "../queue/run.queue.js";
 
@@ -36,6 +44,32 @@ export const createRun = async (
       });
     }
 
+    const agent =
+      await findAgentBySlug(
+        slug
+      );
+
+    if (!agent) {
+      return res.status(404).json({
+        success: false,
+        message: "Agent not found",
+      });
+    }
+
+    const validation =
+      validateAgentInput(
+        req.body ?? {},
+        agent.inputSchema
+      );
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid agent input",
+        errors: validation.errors,
+      });
+    }
+
     const { run } =
       await createAgentRun(
         slug,
@@ -48,7 +82,7 @@ export const createRun = async (
     runId: run.id,
     slug,
     input:
-      req.body ?? {},
+      validation.value,
   },
   {
     jobId: run.id,

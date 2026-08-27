@@ -17,6 +17,22 @@ export const OrchestrationStepKind = {
 export type OrchestrationStepKind = (typeof OrchestrationStepKind)[keyof typeof OrchestrationStepKind]
 
 
+export const AgentSource = {
+  FIRST_PARTY: 'FIRST_PARTY',
+  REMOTE: 'REMOTE'
+} as const
+
+export type AgentSource = (typeof AgentSource)[keyof typeof AgentSource]
+
+
+export const AgentVisibility = {
+  PUBLIC: 'PUBLIC',
+  PRIVATE: 'PRIVATE'
+} as const
+
+export type AgentVisibility = (typeof AgentVisibility)[keyof typeof AgentVisibility]
+
+
 export const RunStatus = {
   PENDING: 'PENDING',
   RUNNING: 'RUNNING',

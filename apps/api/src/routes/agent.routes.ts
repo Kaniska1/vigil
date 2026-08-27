@@ -1,8 +1,20 @@
-import { Router } from "express";
+import {
+  Router,
+} from "express";
 
 import {
   getAgents,
 } from "../controllers/agent.controller.js";
+
+import {
+  getMyPublishedAgents,
+  publishAgent,
+} from "../controllers/agent-publishing.controller.js";
+
+import {
+  getPublishedAgent,
+  patchPublishedAgent,
+} from "../controllers/agent-management.controller.js";
 
 import {
   createRun,
@@ -18,6 +30,30 @@ const router =
 router.get(
   "/",
   getAgents
+);
+
+router.get(
+  "/mine",
+  requireAuth,
+  getMyPublishedAgents
+);
+
+router.post(
+  "/publish",
+  requireAuth,
+  publishAgent
+);
+
+router.get(
+  "/published/:agentId",
+  requireAuth,
+  getPublishedAgent
+);
+
+router.patch(
+  "/published/:agentId",
+  requireAuth,
+  patchPublishedAgent
 );
 
 router.post(

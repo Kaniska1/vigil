@@ -31,6 +31,11 @@ export type AgentMinAggregateOutputType = {
   description: string | null
   version: string | null
   category: string | null
+  source: $Enums.AgentSource | null
+  endpointUrl: string | null
+  visibility: $Enums.AgentVisibility | null
+  creatorId: string | null
+  publishedAt: Date | null
   isActive: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -43,6 +48,11 @@ export type AgentMaxAggregateOutputType = {
   description: string | null
   version: string | null
   category: string | null
+  source: $Enums.AgentSource | null
+  endpointUrl: string | null
+  visibility: $Enums.AgentVisibility | null
+  creatorId: string | null
+  publishedAt: Date | null
   isActive: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -60,6 +70,11 @@ export type AgentCountAggregateOutputType = {
   inputSchema: number
   outputSchema: number
   category: number
+  source: number
+  endpointUrl: number
+  visibility: number
+  creatorId: number
+  publishedAt: number
   isActive: number
   createdAt: number
   updatedAt: number
@@ -74,6 +89,11 @@ export type AgentMinAggregateInputType = {
   description?: true
   version?: true
   category?: true
+  source?: true
+  endpointUrl?: true
+  visibility?: true
+  creatorId?: true
+  publishedAt?: true
   isActive?: true
   createdAt?: true
   updatedAt?: true
@@ -86,6 +106,11 @@ export type AgentMaxAggregateInputType = {
   description?: true
   version?: true
   category?: true
+  source?: true
+  endpointUrl?: true
+  visibility?: true
+  creatorId?: true
+  publishedAt?: true
   isActive?: true
   createdAt?: true
   updatedAt?: true
@@ -103,6 +128,11 @@ export type AgentCountAggregateInputType = {
   inputSchema?: true
   outputSchema?: true
   category?: true
+  source?: true
+  endpointUrl?: true
+  visibility?: true
+  creatorId?: true
+  publishedAt?: true
   isActive?: true
   createdAt?: true
   updatedAt?: true
@@ -193,6 +223,11 @@ export type AgentGroupByOutputType = {
   inputSchema: runtime.JsonValue | null
   outputSchema: runtime.JsonValue | null
   category: string | null
+  source: $Enums.AgentSource
+  endpointUrl: string | null
+  visibility: $Enums.AgentVisibility
+  creatorId: string | null
+  publishedAt: Date | null
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -231,9 +266,15 @@ export type AgentWhereInput = {
   inputSchema?: Prisma.JsonNullableFilter<"Agent">
   outputSchema?: Prisma.JsonNullableFilter<"Agent">
   category?: Prisma.StringNullableFilter<"Agent"> | string | null
+  source?: Prisma.EnumAgentSourceFilter<"Agent"> | $Enums.AgentSource
+  endpointUrl?: Prisma.StringNullableFilter<"Agent"> | string | null
+  visibility?: Prisma.EnumAgentVisibilityFilter<"Agent"> | $Enums.AgentVisibility
+  creatorId?: Prisma.StringNullableFilter<"Agent"> | string | null
+  publishedAt?: Prisma.DateTimeNullableFilter<"Agent"> | Date | string | null
   isActive?: Prisma.BoolFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
+  creator?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   runs?: Prisma.RunListRelationFilter
   orchestrationSteps?: Prisma.OrchestrationStepListRelationFilter
 }
@@ -250,9 +291,15 @@ export type AgentOrderByWithRelationInput = {
   inputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
   outputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrderInput | Prisma.SortOrder
+  source?: Prisma.SortOrder
+  endpointUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  visibility?: Prisma.SortOrder
+  creatorId?: Prisma.SortOrderInput | Prisma.SortOrder
+  publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  creator?: Prisma.UserOrderByWithRelationInput
   runs?: Prisma.RunOrderByRelationAggregateInput
   orchestrationSteps?: Prisma.OrchestrationStepOrderByRelationAggregateInput
 }
@@ -272,9 +319,15 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<{
   inputSchema?: Prisma.JsonNullableFilter<"Agent">
   outputSchema?: Prisma.JsonNullableFilter<"Agent">
   category?: Prisma.StringNullableFilter<"Agent"> | string | null
+  source?: Prisma.EnumAgentSourceFilter<"Agent"> | $Enums.AgentSource
+  endpointUrl?: Prisma.StringNullableFilter<"Agent"> | string | null
+  visibility?: Prisma.EnumAgentVisibilityFilter<"Agent"> | $Enums.AgentVisibility
+  creatorId?: Prisma.StringNullableFilter<"Agent"> | string | null
+  publishedAt?: Prisma.DateTimeNullableFilter<"Agent"> | Date | string | null
   isActive?: Prisma.BoolFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
+  creator?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   runs?: Prisma.RunListRelationFilter
   orchestrationSteps?: Prisma.OrchestrationStepListRelationFilter
 }, "id" | "slug">
@@ -291,6 +344,11 @@ export type AgentOrderByWithAggregationInput = {
   inputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
   outputSchema?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrderInput | Prisma.SortOrder
+  source?: Prisma.SortOrder
+  endpointUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  visibility?: Prisma.SortOrder
+  creatorId?: Prisma.SortOrderInput | Prisma.SortOrder
+  publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -314,6 +372,11 @@ export type AgentScalarWhereWithAggregatesInput = {
   inputSchema?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
   outputSchema?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
   category?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null
+  source?: Prisma.EnumAgentSourceWithAggregatesFilter<"Agent"> | $Enums.AgentSource
+  endpointUrl?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null
+  visibility?: Prisma.EnumAgentVisibilityWithAggregatesFilter<"Agent"> | $Enums.AgentVisibility
+  creatorId?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null
+  publishedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Agent"> | Date | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"Agent"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
@@ -331,9 +394,14 @@ export type AgentCreateInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  creator?: Prisma.UserCreateNestedOneWithoutPublishedAgentsInput
   runs?: Prisma.RunCreateNestedManyWithoutAgentInput
   orchestrationSteps?: Prisma.OrchestrationStepCreateNestedManyWithoutAgentInput
 }
@@ -350,6 +418,11 @@ export type AgentUncheckedCreateInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  creatorId?: string | null
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -369,9 +442,14 @@ export type AgentUpdateInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creator?: Prisma.UserUpdateOneWithoutPublishedAgentsNestedInput
   runs?: Prisma.RunUpdateManyWithoutAgentNestedInput
   orchestrationSteps?: Prisma.OrchestrationStepUpdateManyWithoutAgentNestedInput
 }
@@ -388,6 +466,11 @@ export type AgentUncheckedUpdateInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  creatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -407,6 +490,11 @@ export type AgentCreateManyInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  creatorId?: string | null
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -424,6 +512,10 @@ export type AgentUpdateManyMutationInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -441,9 +533,24 @@ export type AgentUncheckedUpdateManyInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  creatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type AgentListRelationFilter = {
+  every?: Prisma.AgentWhereInput
+  some?: Prisma.AgentWhereInput
+  none?: Prisma.AgentWhereInput
+}
+
+export type AgentOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type StringNullableListFilter<$PrismaModel = never> = {
@@ -466,6 +573,11 @@ export type AgentCountOrderByAggregateInput = {
   inputSchema?: Prisma.SortOrder
   outputSchema?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  source?: Prisma.SortOrder
+  endpointUrl?: Prisma.SortOrder
+  visibility?: Prisma.SortOrder
+  creatorId?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -478,6 +590,11 @@ export type AgentMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  source?: Prisma.SortOrder
+  endpointUrl?: Prisma.SortOrder
+  visibility?: Prisma.SortOrder
+  creatorId?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -490,6 +607,11 @@ export type AgentMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   version?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  source?: Prisma.SortOrder
+  endpointUrl?: Prisma.SortOrder
+  visibility?: Prisma.SortOrder
+  creatorId?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -503,6 +625,48 @@ export type AgentScalarRelationFilter = {
 export type AgentNullableScalarRelationFilter = {
   is?: Prisma.AgentWhereInput | null
   isNot?: Prisma.AgentWhereInput | null
+}
+
+export type AgentCreateNestedManyWithoutCreatorInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutCreatorInput, Prisma.AgentUncheckedCreateWithoutCreatorInput> | Prisma.AgentCreateWithoutCreatorInput[] | Prisma.AgentUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutCreatorInput | Prisma.AgentCreateOrConnectWithoutCreatorInput[]
+  createMany?: Prisma.AgentCreateManyCreatorInputEnvelope
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+}
+
+export type AgentUncheckedCreateNestedManyWithoutCreatorInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutCreatorInput, Prisma.AgentUncheckedCreateWithoutCreatorInput> | Prisma.AgentCreateWithoutCreatorInput[] | Prisma.AgentUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutCreatorInput | Prisma.AgentCreateOrConnectWithoutCreatorInput[]
+  createMany?: Prisma.AgentCreateManyCreatorInputEnvelope
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+}
+
+export type AgentUpdateManyWithoutCreatorNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutCreatorInput, Prisma.AgentUncheckedCreateWithoutCreatorInput> | Prisma.AgentCreateWithoutCreatorInput[] | Prisma.AgentUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutCreatorInput | Prisma.AgentCreateOrConnectWithoutCreatorInput[]
+  upsert?: Prisma.AgentUpsertWithWhereUniqueWithoutCreatorInput | Prisma.AgentUpsertWithWhereUniqueWithoutCreatorInput[]
+  createMany?: Prisma.AgentCreateManyCreatorInputEnvelope
+  set?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  disconnect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  delete?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  update?: Prisma.AgentUpdateWithWhereUniqueWithoutCreatorInput | Prisma.AgentUpdateWithWhereUniqueWithoutCreatorInput[]
+  updateMany?: Prisma.AgentUpdateManyWithWhereWithoutCreatorInput | Prisma.AgentUpdateManyWithWhereWithoutCreatorInput[]
+  deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
+}
+
+export type AgentUncheckedUpdateManyWithoutCreatorNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutCreatorInput, Prisma.AgentUncheckedCreateWithoutCreatorInput> | Prisma.AgentCreateWithoutCreatorInput[] | Prisma.AgentUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutCreatorInput | Prisma.AgentCreateOrConnectWithoutCreatorInput[]
+  upsert?: Prisma.AgentUpsertWithWhereUniqueWithoutCreatorInput | Prisma.AgentUpsertWithWhereUniqueWithoutCreatorInput[]
+  createMany?: Prisma.AgentCreateManyCreatorInputEnvelope
+  set?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  disconnect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  delete?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
+  update?: Prisma.AgentUpdateWithWhereUniqueWithoutCreatorInput | Prisma.AgentUpdateWithWhereUniqueWithoutCreatorInput[]
+  updateMany?: Prisma.AgentUpdateManyWithWhereWithoutCreatorInput | Prisma.AgentUpdateManyWithWhereWithoutCreatorInput[]
+  deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
 }
 
 export type AgentCreatecapabilitiesInput = {
@@ -530,6 +694,14 @@ export type AgentUpdatetoolsInput = {
 export type AgentUpdatepermissionsInput = {
   set?: string[]
   push?: string | string[]
+}
+
+export type EnumAgentSourceFieldUpdateOperationsInput = {
+  set?: $Enums.AgentSource
+}
+
+export type EnumAgentVisibilityFieldUpdateOperationsInput = {
+  set?: $Enums.AgentVisibility
 }
 
 export type BoolFieldUpdateOperationsInput = {
@@ -566,6 +738,103 @@ export type AgentUpdateOneWithoutOrchestrationStepsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutOrchestrationStepsInput, Prisma.AgentUpdateWithoutOrchestrationStepsInput>, Prisma.AgentUncheckedUpdateWithoutOrchestrationStepsInput>
 }
 
+export type AgentCreateWithoutCreatorInput = {
+  id?: string
+  slug: string
+  name: string
+  description: string
+  version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  publishedAt?: Date | string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  runs?: Prisma.RunCreateNestedManyWithoutAgentInput
+  orchestrationSteps?: Prisma.OrchestrationStepCreateNestedManyWithoutAgentInput
+}
+
+export type AgentUncheckedCreateWithoutCreatorInput = {
+  id?: string
+  slug: string
+  name: string
+  description: string
+  version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  publishedAt?: Date | string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  runs?: Prisma.RunUncheckedCreateNestedManyWithoutAgentInput
+  orchestrationSteps?: Prisma.OrchestrationStepUncheckedCreateNestedManyWithoutAgentInput
+}
+
+export type AgentCreateOrConnectWithoutCreatorInput = {
+  where: Prisma.AgentWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentCreateWithoutCreatorInput, Prisma.AgentUncheckedCreateWithoutCreatorInput>
+}
+
+export type AgentCreateManyCreatorInputEnvelope = {
+  data: Prisma.AgentCreateManyCreatorInput | Prisma.AgentCreateManyCreatorInput[]
+  skipDuplicates?: boolean
+}
+
+export type AgentUpsertWithWhereUniqueWithoutCreatorInput = {
+  where: Prisma.AgentWhereUniqueInput
+  update: Prisma.XOR<Prisma.AgentUpdateWithoutCreatorInput, Prisma.AgentUncheckedUpdateWithoutCreatorInput>
+  create: Prisma.XOR<Prisma.AgentCreateWithoutCreatorInput, Prisma.AgentUncheckedCreateWithoutCreatorInput>
+}
+
+export type AgentUpdateWithWhereUniqueWithoutCreatorInput = {
+  where: Prisma.AgentWhereUniqueInput
+  data: Prisma.XOR<Prisma.AgentUpdateWithoutCreatorInput, Prisma.AgentUncheckedUpdateWithoutCreatorInput>
+}
+
+export type AgentUpdateManyWithWhereWithoutCreatorInput = {
+  where: Prisma.AgentScalarWhereInput
+  data: Prisma.XOR<Prisma.AgentUpdateManyMutationInput, Prisma.AgentUncheckedUpdateManyWithoutCreatorInput>
+}
+
+export type AgentScalarWhereInput = {
+  AND?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
+  OR?: Prisma.AgentScalarWhereInput[]
+  NOT?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
+  id?: Prisma.StringFilter<"Agent"> | string
+  slug?: Prisma.StringFilter<"Agent"> | string
+  name?: Prisma.StringFilter<"Agent"> | string
+  description?: Prisma.StringFilter<"Agent"> | string
+  version?: Prisma.StringFilter<"Agent"> | string
+  capabilities?: Prisma.StringNullableListFilter<"Agent">
+  tools?: Prisma.StringNullableListFilter<"Agent">
+  permissions?: Prisma.StringNullableListFilter<"Agent">
+  inputSchema?: Prisma.JsonNullableFilter<"Agent">
+  outputSchema?: Prisma.JsonNullableFilter<"Agent">
+  category?: Prisma.StringNullableFilter<"Agent"> | string | null
+  source?: Prisma.EnumAgentSourceFilter<"Agent"> | $Enums.AgentSource
+  endpointUrl?: Prisma.StringNullableFilter<"Agent"> | string | null
+  visibility?: Prisma.EnumAgentVisibilityFilter<"Agent"> | $Enums.AgentVisibility
+  creatorId?: Prisma.StringNullableFilter<"Agent"> | string | null
+  publishedAt?: Prisma.DateTimeNullableFilter<"Agent"> | Date | string | null
+  isActive?: Prisma.BoolFilter<"Agent"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
+}
+
 export type AgentCreateWithoutRunsInput = {
   id?: string
   slug: string
@@ -578,9 +847,14 @@ export type AgentCreateWithoutRunsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  creator?: Prisma.UserCreateNestedOneWithoutPublishedAgentsInput
   orchestrationSteps?: Prisma.OrchestrationStepCreateNestedManyWithoutAgentInput
 }
 
@@ -596,6 +870,11 @@ export type AgentUncheckedCreateWithoutRunsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  creatorId?: string | null
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -630,9 +909,14 @@ export type AgentUpdateWithoutRunsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creator?: Prisma.UserUpdateOneWithoutPublishedAgentsNestedInput
   orchestrationSteps?: Prisma.OrchestrationStepUpdateManyWithoutAgentNestedInput
 }
 
@@ -648,6 +932,11 @@ export type AgentUncheckedUpdateWithoutRunsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  creatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -666,9 +955,14 @@ export type AgentCreateWithoutOrchestrationStepsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  creator?: Prisma.UserCreateNestedOneWithoutPublishedAgentsInput
   runs?: Prisma.RunCreateNestedManyWithoutAgentInput
 }
 
@@ -684,6 +978,11 @@ export type AgentUncheckedCreateWithoutOrchestrationStepsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  creatorId?: string | null
+  publishedAt?: Date | string | null
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -718,9 +1017,14 @@ export type AgentUpdateWithoutOrchestrationStepsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creator?: Prisma.UserUpdateOneWithoutPublishedAgentsNestedInput
   runs?: Prisma.RunUpdateManyWithoutAgentNestedInput
 }
 
@@ -736,10 +1040,103 @@ export type AgentUncheckedUpdateWithoutOrchestrationStepsInput = {
   inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  creatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   runs?: Prisma.RunUncheckedUpdateManyWithoutAgentNestedInput
+}
+
+export type AgentCreateManyCreatorInput = {
+  id?: string
+  slug: string
+  name: string
+  description: string
+  version?: string
+  capabilities?: Prisma.AgentCreatecapabilitiesInput | string[]
+  tools?: Prisma.AgentCreatetoolsInput | string[]
+  permissions?: Prisma.AgentCreatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: string | null
+  source?: $Enums.AgentSource
+  endpointUrl?: string | null
+  visibility?: $Enums.AgentVisibility
+  publishedAt?: Date | string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type AgentUpdateWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  runs?: Prisma.RunUpdateManyWithoutAgentNestedInput
+  orchestrationSteps?: Prisma.OrchestrationStepUpdateManyWithoutAgentNestedInput
+}
+
+export type AgentUncheckedUpdateWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  runs?: Prisma.RunUncheckedUpdateManyWithoutAgentNestedInput
+  orchestrationSteps?: Prisma.OrchestrationStepUncheckedUpdateManyWithoutAgentNestedInput
+}
+
+export type AgentUncheckedUpdateManyWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  capabilities?: Prisma.AgentUpdatecapabilitiesInput | string[]
+  tools?: Prisma.AgentUpdatetoolsInput | string[]
+  permissions?: Prisma.AgentUpdatepermissionsInput | string[]
+  inputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  outputSchema?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumAgentSourceFieldUpdateOperationsInput | $Enums.AgentSource
+  endpointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visibility?: Prisma.EnumAgentVisibilityFieldUpdateOperationsInput | $Enums.AgentVisibility
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -794,9 +1191,15 @@ export type AgentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   inputSchema?: boolean
   outputSchema?: boolean
   category?: boolean
+  source?: boolean
+  endpointUrl?: boolean
+  visibility?: boolean
+  creatorId?: boolean
+  publishedAt?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  creator?: boolean | Prisma.Agent$creatorArgs<ExtArgs>
   runs?: boolean | Prisma.Agent$runsArgs<ExtArgs>
   orchestrationSteps?: boolean | Prisma.Agent$orchestrationStepsArgs<ExtArgs>
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
@@ -814,9 +1217,15 @@ export type AgentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   inputSchema?: boolean
   outputSchema?: boolean
   category?: boolean
+  source?: boolean
+  endpointUrl?: boolean
+  visibility?: boolean
+  creatorId?: boolean
+  publishedAt?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  creator?: boolean | Prisma.Agent$creatorArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
 export type AgentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -831,9 +1240,15 @@ export type AgentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   inputSchema?: boolean
   outputSchema?: boolean
   category?: boolean
+  source?: boolean
+  endpointUrl?: boolean
+  visibility?: boolean
+  creatorId?: boolean
+  publishedAt?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  creator?: boolean | Prisma.Agent$creatorArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
 export type AgentSelectScalar = {
@@ -848,23 +1263,34 @@ export type AgentSelectScalar = {
   inputSchema?: boolean
   outputSchema?: boolean
   category?: boolean
+  source?: boolean
+  endpointUrl?: boolean
+  visibility?: boolean
+  creatorId?: boolean
+  publishedAt?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "description" | "version" | "capabilities" | "tools" | "permissions" | "inputSchema" | "outputSchema" | "category" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
+export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "name" | "description" | "version" | "capabilities" | "tools" | "permissions" | "inputSchema" | "outputSchema" | "category" | "source" | "endpointUrl" | "visibility" | "creatorId" | "publishedAt" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
 export type AgentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  creator?: boolean | Prisma.Agent$creatorArgs<ExtArgs>
   runs?: boolean | Prisma.Agent$runsArgs<ExtArgs>
   orchestrationSteps?: boolean | Prisma.Agent$orchestrationStepsArgs<ExtArgs>
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type AgentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type AgentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type AgentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  creator?: boolean | Prisma.Agent$creatorArgs<ExtArgs>
+}
+export type AgentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  creator?: boolean | Prisma.Agent$creatorArgs<ExtArgs>
+}
 
 export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Agent"
   objects: {
+    creator: Prisma.$UserPayload<ExtArgs> | null
     runs: Prisma.$RunPayload<ExtArgs>[]
     orchestrationSteps: Prisma.$OrchestrationStepPayload<ExtArgs>[]
   }
@@ -880,6 +1306,11 @@ export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     inputSchema: runtime.JsonValue | null
     outputSchema: runtime.JsonValue | null
     category: string | null
+    source: $Enums.AgentSource
+    endpointUrl: string | null
+    visibility: $Enums.AgentVisibility
+    creatorId: string | null
+    publishedAt: Date | null
     isActive: boolean
     createdAt: Date
     updatedAt: Date
@@ -1277,6 +1708,7 @@ readonly fields: AgentFieldRefs;
  */
 export interface Prisma__AgentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  creator<T extends Prisma.Agent$creatorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$creatorArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   runs<T extends Prisma.Agent$runsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$runsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   orchestrationSteps<T extends Prisma.Agent$orchestrationStepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$orchestrationStepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrchestrationStepPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1319,6 +1751,11 @@ export interface AgentFieldRefs {
   readonly inputSchema: Prisma.FieldRef<"Agent", 'Json'>
   readonly outputSchema: Prisma.FieldRef<"Agent", 'Json'>
   readonly category: Prisma.FieldRef<"Agent", 'String'>
+  readonly source: Prisma.FieldRef<"Agent", 'AgentSource'>
+  readonly endpointUrl: Prisma.FieldRef<"Agent", 'String'>
+  readonly visibility: Prisma.FieldRef<"Agent", 'AgentVisibility'>
+  readonly creatorId: Prisma.FieldRef<"Agent", 'String'>
+  readonly publishedAt: Prisma.FieldRef<"Agent", 'DateTime'>
   readonly isActive: Prisma.FieldRef<"Agent", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Agent", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Agent", 'DateTime'>
@@ -1576,6 +2013,10 @@ export type AgentCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    */
   data: Prisma.AgentCreateManyInput | Prisma.AgentCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1646,6 +2087,10 @@ export type AgentUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * Limit how many Agents to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1712,6 +2157,25 @@ export type AgentDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Agents to delete.
    */
   limit?: number
+}
+
+/**
+ * Agent.creator
+ */
+export type Agent$creatorArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

@@ -67,3 +67,8 @@ export type OrchestrationStep = Prisma.OrchestrationStepModel
  * 
  */
 export type OrchestrationEvent = Prisma.OrchestrationEventModel
+/**
+ * Model ApiKey
+ * 
+ */
+export type ApiKey = Prisma.ApiKeyModel

@@ -32,35 +32,36 @@ const securityReviewerDefinition:
     ],
 
     permissions: [
-      "github.read",
+      "repository:read",
+      "pull_requests:read",
     ],
 
     category:
       "developer-tools",
 
     inputSchema: {
-  repository: {
-    type: "string",
-    description:
-      "GitHub repository in owner/repository format.",
-    required: true,
-  },
+      repository: {
+        type: "string",
+        description:
+          "GitHub repository in owner/repository format.",
+        required: true,
+      },
 
-  pullRequest: {
-    type: "number",
-    description:
-      "Pull request number to review.",
-    required: true,
-  },
-},
+      pullRequest: {
+        type: "number",
+        description:
+          "Pull request number to review.",
+        required: true,
+      },
+    },
 
-outputSchema: {
-  securityReview: {
-    type: "json",
-    description:
-      "Structured security review result.",
-  },
-},
+    outputSchema: {
+      securityReview: {
+        type: "json",
+        description:
+          "Structured security review result.",
+      },
+    },
   },
 
   implementation:

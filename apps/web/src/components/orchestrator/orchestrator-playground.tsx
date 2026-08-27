@@ -32,6 +32,7 @@ import {
 } from "./context-cards";
 
 import { TaskRows } from "./task-rows";
+import { OrchestrationTabs } from "@/components/orchestrations/orchestration-tabs";
 
 import {
   createOrchestratorPlan,
@@ -39,6 +40,10 @@ import {
   getOrchestration,
   getOrchestrationStreamUrl,
 } from "@/lib/api";
+
+import {
+  loadDeveloperSettings,
+} from "@/lib/developer-settings";
 
 import type {
   OrchestrationDetails,
@@ -167,7 +172,11 @@ function parseContextValue(
   return trimmed;
 }
 
-export function OrchestratorPlayground() {
+export function OrchestratorPlayground({
+  draftId,
+}: {
+  draftId: string;
+}) {
   const [
     goal,
     setGoal,
@@ -491,6 +500,9 @@ export function OrchestratorPlayground() {
           {}
         );
 
+      const developerSettings =
+        loadDeveloperSettings();
+
       const result =
         await createOrchestratorPlan(
           {
@@ -498,6 +510,14 @@ export function OrchestratorPlayground() {
               goal.trim(),
 
             context,
+
+            settings: {
+              semanticEvaluation:
+                developerSettings.semanticEvaluation,
+
+              maxReplans:
+                developerSettings.maxReplans,
+            },
           }
         );
 
@@ -512,6 +532,21 @@ export function OrchestratorPlayground() {
       setOrchestrationStatus(
         result.status
       );
+
+      if (
+        developerSettings.autoExecute &&
+        result.plan.executable &&
+        result.status ===
+          "READY"
+      ) {
+        await executeOrchestration(
+          result.orchestrationId
+        );
+
+        setOrchestrationStatus(
+          "RUNNING"
+        );
+      }
 
       /*
        * Show the generated plan immediately
@@ -639,8 +674,19 @@ export function OrchestratorPlayground() {
   }
 
   return (
-    <div>
-      <div className="mb-7 flex flex-col gap-5 border-b border-[var(--line)] pb-7 xl:flex-row xl:items-end xl:justify-between">
+    <div className="space-y-5">
+      <OrchestrationTabs
+        currentId={orchestrationId}
+        currentTitle={
+          goal ||
+          "New orchestration"
+        }
+        currentStatus={orchestrationStatus}
+        draftId={draftId}
+      />
+
+      <div>
+        <div className="mb-7 flex flex-col gap-5 border-b border-[var(--line)] pb-7 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <div className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink-3)]">
             <Network className="size-4 text-[var(--accent-800)]" />
@@ -1067,6 +1113,7 @@ export function OrchestratorPlayground() {
             </div>
           ) : null}
         </section>
+      </div>
       </div>
     </div>
   );
