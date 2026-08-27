@@ -15,6 +15,7 @@ import {
   Sparkles,
   Store,
   UploadCloud,
+  ChartNoAxesCombined,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -395,7 +396,31 @@ export function AppSidebar() {
   <Code2 className="size-4 text-[var(--ink-3)]" />
   API & SDK
 </Link>
-
+<Link
+  href="/developer/metrics"
+  className={`
+    flex h-9 w-full
+    items-center gap-2
+    rounded-[10px]
+    px-2.5
+    text-left
+    text-[13px]
+    font-semibold
+    transition-colors
+    ${
+      pathname ===
+        "/developer/metrics" ||
+      pathname.startsWith(
+        "/developer/metrics/"
+      )
+        ? "bg-[var(--hover-2)] text-[var(--ink)]"
+        : "text-[var(--ink-2)] hover:bg-[var(--hover)] hover:text-[var(--ink)]"
+    }
+  `}
+>
+  <ChartNoAxesCombined className="size-4 text-[var(--ink-3)]" />
+  Metrics
+</Link>
             <Link
               href="/settings"
               className={`

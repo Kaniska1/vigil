@@ -11,28 +11,26 @@ if (!apiKey) {
   );
 }
 
-const baseUrl =
-  process.env.VIGIL_API_URL ??
-  "http://localhost:4000";
-
 const vigil =
   new Vigil({
     apiKey,
-    baseUrl,
+    baseUrl:
+      process.env.VIGIL_API_URL ??
+      "http://localhost:4000",
   });
 
 async function main() {
   console.log(
-    `Using Vigil API: ${baseUrl}`
+    "Creating orchestration..."
   );
 
   const created =
     await vigil.orchestrations.create({
       goal:
-        "Research the current OWASP guidance for API security and summarize the most important recommendations.",
+        "Diagnose why a REST API returns HTTP 500 when a user updates their profile.",
       context: {
         query:
-          "Current OWASP API security guidance and recommendations",
+          "A REST API returns HTTP 500 whenever a user updates their profile. Diagnose the likely cause and summarize what should be inspected.",
       },
       settings: {
         semanticEvaluation:
@@ -50,20 +48,64 @@ async function main() {
   );
 
   console.log(
-    "Status:",
-    created.status
-  );
+  "Status:",
+  created.status
+);
+
+console.log(
+  "Executable:",
+  created.plan.executable
+);
+
+console.log(
+  "Unresolved required:",
+  created.plan.unresolvedCapabilities
+);
+
+console.log(
+  "Unresolved optional:",
+  created.plan.unresolvedOptionalCapabilities
+);
+
+console.log(
+  "\nExecution plan:"
+);
+
+  for (
+    const step of
+    created.plan.executionSteps
+  ) {
+    console.log(
+      `- ${step.agent.slug}@${step.agent.version}`
+    );
+
+    console.log(
+      `  capabilities: ${step.requiredCapabilities.join(", ")}`
+    );
+  }
+
+  const selectedRemote =
+    created.plan.executionSteps.some(
+      (step) =>
+        step.agent.slug ===
+        "remote-api-debugger"
+    );
+
+  if (!selectedRemote) {
+    throw new Error(
+      "Planner did not select remote-api-debugger"
+    );
+  }
 
   console.log(
-    "Executable:",
-    created.plan.executable
+    "\nRemote agent selected by planner."
   );
 
   if (
     !created.plan.executable
   ) {
     console.log(
-      "Plan is blocked:",
+      "Missing inputs:",
       created.plan.missingInputs
     );
 
@@ -76,7 +118,7 @@ async function main() {
     );
 
   console.log(
-    "Execution status:",
+    "\nExecution status:",
     execution.status
   );
 
@@ -112,9 +154,9 @@ async function main() {
       created.orchestrationId,
       {
         pollIntervalMs:
-          1000,
+          500,
         timeoutMs:
-          120000,
+          30000,
       }
     );
 
@@ -126,24 +168,37 @@ async function main() {
   );
 
   console.log(
-    "Final result:",
-    completed.result
+    "\nFinal result:"
   );
 
+  console.dir(
+    completed.result,
+    {
+      depth: null,
+    }
+  );
+
+  if (
+    completed.status !==
+    "SUCCESS"
+  ) {
+    throw new Error(
+      "Remote orchestration did not succeed"
+    );
+  }
+
   console.log(
-    "\nSDK polling + SSE smoke test completed."
+    "\nRemote-agent orchestration E2E passed."
   );
 }
 
 main().catch(
   (error) => {
     console.error(
-      "\nSDK smoke test failed."
+      "\nRemote orchestration E2E failed."
     );
 
-    console.error(
-      error
-    );
+    console.error(error);
 
     process.exitCode =
       1;

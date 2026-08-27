@@ -1,13 +1,67 @@
 {
-  "name": "@vigil/sdk",
+  "name": "@kaniska1/vigil-sdk",
   "version": "0.1.0",
-  "description": "TypeScript SDK for the Vigil autonomous agent runtime.",
+  "description": "TypeScript SDK for the Vigil autonomous multi-agent orchestration runtime.",
   "type": "module",
+
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": {".": {"types": "./dist/index.d.ts", "import": "./dist/index.js"}},
-  "files": ["dist"],
-  "scripts": {"build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit"},
-  "devDependencies": {"typescript": "^7.0.2"},
-  "engines": {"node": ">=18"}
+
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+
+  "files": [
+    "dist",
+    "README.md"
+  ],
+
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+
+  "keywords": [
+    "ai",
+    "agents",
+    "multi-agent",
+    "orchestration",
+    "agent-runtime",
+    "observability",
+    "typescript",
+    "sdk"
+  ],
+
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kaniska1/vigil.git",
+    "directory": "packages/sdk"
+  },
+
+  "bugs": {
+    "url": "https://github.com/Kaniska1/vigil/issues"
+  },
+
+  "homepage": "https://github.com/Kaniska1/vigil#readme",
+
+  "license": "MIT",
+
+  "sideEffects": false,
+
+  "publishConfig": {
+    "access": "public"
+  },
+
+  "engines": {
+    "node": ">=18"
+  },
+
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }

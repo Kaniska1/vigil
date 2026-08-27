@@ -1,8 +1,8 @@
 import prisma from "../lib/prisma.js";
 
 import {
-  getAgentImplementation,
-} from "../agents/agent.registry.js";
+  resolveAgentImplementation,
+} from "./resolve-agent-implementation.service.js";
 
 import type {
   AgentInput,
@@ -38,9 +38,9 @@ export async function createAgentRun(
   }
 
   const agentImplementation =
-    await getAgentImplementation(
-      slug
-    );
+  await resolveAgentImplementation(
+    agentRecord
+  );
 
   if (!agentImplementation) {
     throw new Error(
@@ -83,8 +83,8 @@ export async function executeAgentRun(
   }
 
   const agentImplementation =
-    await getAgentImplementation(
-      slug
+    await resolveAgentImplementation(
+      agentRecord
     );
 
   if (!agentImplementation) {
