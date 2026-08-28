@@ -7,6 +7,7 @@ node_modules/
 .env.*
 !.env.example
 apps/api/.env.docker
+apps/api/env.cloud.yaml
 
 **/.env
 **/.env.*
