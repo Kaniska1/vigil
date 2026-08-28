@@ -371,15 +371,15 @@ Example metadata:
 
 ```mermaid
 flowchart TD
-    PLAN[Planner says: "Need web-research"]
+    PLAN["Planner says: Need web-research"]
     REG[(Agent Registry)]
 
-    A1[github-reviewer]
-    A2[security-reviewer]
-    A3[google-search-researcher]
+    A1["github-reviewer"]
+    A2["security-reviewer"]
+    A3["google-search-researcher"]
 
-    MATCH[Capability Matcher]
-    EXEC[Execution Runtime]
+    MATCH["Capability Matcher"]
+    EXEC["Execution Runtime"]
 
     PLAN --> MATCH
     REG --> MATCH
