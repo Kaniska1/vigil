@@ -733,7 +733,7 @@ export declare type DynamicResultExtensionArgs<R_, TypeMap extends TypeMapDef> =
     [K in keyof R_]: {
         [P in keyof R_[K]]?: {
             needs?: DynamicResultExtensionNeeds<TypeMap, ModelKey<TypeMap, K>, R_[K][P]>;
-            compute(data: DynamicResultExtensionData<TypeMap, ModelKey<TypeMap, K>, R_[K][P]>): any;
+            compute(data: DynamicResultExtensionData<TypeMap, ModelKey<TypeMap, K>, R_[K][P]>, modelName: ModelKey<TypeMap, K>): any;
         };
     };
 };
@@ -838,6 +838,19 @@ declare type EngineSpan = {
 declare type EngineSpanId = string;
 
 declare type EngineSpanKind = 'client' | 'internal';
+
+declare interface EngineTraceEvent {
+    spanId: EngineSpanId;
+    target?: string;
+    level: LogLevel_2;
+    timestamp: HrTime;
+    attributes: Record<string, unknown> & {
+        message?: string;
+        query?: string;
+        duration_ms?: number;
+        params?: string;
+    };
+}
 
 declare type EnumValue = ReadonlyDeep_2<{
     name: string;
@@ -1399,6 +1412,21 @@ declare type HrTime = [number, number];
  */
 declare type HrTime_2 = [number, number];
 
+/**
+ * Query plan nodes that perform database I/O: individual queries and statements,
+ * and subtrees executed within a transaction.
+ */
+declare type ImpureQueryPlanNode = {
+    type: 'query';
+    args: QueryPlanDbQuery;
+} | {
+    type: 'execute';
+    args: QueryPlanDbQuery;
+} | {
+    type: 'transaction';
+    args: QueryPlanNode;
+};
+
 declare type Index = ReadonlyDeep_2<{
     model: string;
     type: IndexType;
@@ -1581,13 +1609,6 @@ declare interface Job {
 
 export { join }
 
-declare type JoinExpression = {
-    child: QueryPlanNode;
-    on: [left: string, right: string][];
-    parentField: string;
-    isRelationUnique: boolean;
-};
-
 export declare type JsArgs = {
     select?: Selection_2;
     include?: Selection_2;
@@ -1724,6 +1745,8 @@ declare type LogEvent = {
 declare type LogEventType = 'info' | 'warn' | 'error';
 
 declare type LogLevel = 'info' | 'query' | 'warn' | 'error';
+
+declare type LogLevel_2 = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'query';
 
 /**
  * Generates more strict variant of an enum which, unlike regular enum,
@@ -2263,6 +2286,126 @@ declare namespace Public_2 {
     }
 }
 
+/**
+ * Query plan nodes that are free of side effects and can be interpreted synchronously
+ * without touching the database. The `Rest` parameter controls what other nodes may
+ * appear in child positions: with the default `never` the tree is fully pure, while
+ * `PureQueryPlanNode<ImpureQueryPlanNode>` describes a tree of pure nodes that may
+ * contain impure nodes anywhere inside.
+ */
+declare type PureQueryPlanNode<Rest = never> = {
+    type: 'value';
+    args: PrismaValue;
+    /**
+     * Present when this node is the result of evaluating an impure node during
+     * query plan purification. Never produced by the query compiler.
+     */
+    lastInsertId?: string;
+} | {
+    type: 'seq';
+    args: (PureQueryPlanNode<Rest> | Rest)[];
+} | {
+    type: 'get';
+    args: {
+        name: string;
+    };
+} | {
+    type: 'let';
+    args: {
+        bindings: {
+            name: string;
+            expr: PureQueryPlanNode<Rest> | Rest;
+        }[];
+        expr: PureQueryPlanNode<Rest> | Rest;
+    };
+} | {
+    type: 'getFirstNonEmpty';
+    args: {
+        names: string[];
+    };
+} | {
+    type: 'reverse';
+    args: PureQueryPlanNode<Rest> | Rest;
+} | {
+    type: 'sum';
+    args: (PureQueryPlanNode<Rest> | Rest)[];
+} | {
+    type: 'concat';
+    args: (PureQueryPlanNode<Rest> | Rest)[];
+} | {
+    type: 'unique';
+    args: PureQueryPlanNode<Rest> | Rest;
+} | {
+    type: 'required';
+    args: PureQueryPlanNode<Rest> | Rest;
+} | {
+    type: 'join';
+    args: {
+        parent: PureQueryPlanNode<Rest> | Rest;
+        children: {
+            child: PureQueryPlanNode<Rest> | Rest;
+            on: [left: string, right: string][];
+            parentField: string;
+            isRelationUnique: boolean;
+        }[];
+        canAssumeStrictEquality: boolean;
+    };
+} | {
+    type: 'mapField';
+    args: {
+        field: string;
+        records: PureQueryPlanNode<Rest> | Rest;
+    };
+} | {
+    type: 'dataMap';
+    args: {
+        expr: PureQueryPlanNode<Rest> | Rest;
+        structure: ResultNode;
+        enums: Record<string, Record<string, string>>;
+    };
+} | {
+    type: 'validate';
+    args: {
+        expr: PureQueryPlanNode<Rest> | Rest;
+        rules: DataRule[];
+    } & ValidationError;
+} | {
+    type: 'if';
+    args: {
+        value: PureQueryPlanNode<Rest> | Rest;
+        rule: DataRule;
+        then: PureQueryPlanNode<Rest> | Rest;
+        else: PureQueryPlanNode<Rest> | Rest;
+    };
+} | {
+    type: 'unit';
+} | {
+    type: 'diff';
+    args: {
+        from: PureQueryPlanNode<Rest> | Rest;
+        to: PureQueryPlanNode<Rest> | Rest;
+        fields: string[];
+    };
+} | {
+    type: 'initializeRecord';
+    args: {
+        expr: PureQueryPlanNode<Rest> | Rest;
+        fields: Record<string, FieldInitializer>;
+    };
+} | {
+    type: 'mapRecord';
+    args: {
+        expr: PureQueryPlanNode<Rest> | Rest;
+        fields: Record<string, FieldOperation>;
+    };
+} | {
+    type: 'process';
+    args: {
+        expr: PureQueryPlanNode<Rest> | Rest;
+        operations: InMemoryOps;
+    };
+};
+
 declare type Query = ReadonlyDeep_2<{
     name: string;
     args: SchemaArg[];
@@ -2347,11 +2490,6 @@ declare type QueryOutput = ReadonlyDeep_2<{
     isList: boolean;
 }>;
 
-declare type QueryPlanBinding = {
-    name: string;
-    expr: QueryPlanNode;
-};
-
 declare type QueryPlanDbQuery = {
     type: 'rawSql';
     sql: string;
@@ -2366,114 +2504,11 @@ declare type QueryPlanDbQuery = {
     chunkable: boolean;
 };
 
-declare type QueryPlanNode = {
-    type: 'value';
-    args: PrismaValue;
-} | {
-    type: 'seq';
-    args: QueryPlanNode[];
-} | {
-    type: 'get';
-    args: {
-        name: string;
-    };
-} | {
-    type: 'let';
-    args: {
-        bindings: QueryPlanBinding[];
-        expr: QueryPlanNode;
-    };
-} | {
-    type: 'getFirstNonEmpty';
-    args: {
-        names: string[];
-    };
-} | {
-    type: 'query';
-    args: QueryPlanDbQuery;
-} | {
-    type: 'execute';
-    args: QueryPlanDbQuery;
-} | {
-    type: 'reverse';
-    args: QueryPlanNode;
-} | {
-    type: 'sum';
-    args: QueryPlanNode[];
-} | {
-    type: 'concat';
-    args: QueryPlanNode[];
-} | {
-    type: 'unique';
-    args: QueryPlanNode;
-} | {
-    type: 'required';
-    args: QueryPlanNode;
-} | {
-    type: 'join';
-    args: {
-        parent: QueryPlanNode;
-        children: JoinExpression[];
-        canAssumeStrictEquality: boolean;
-    };
-} | {
-    type: 'mapField';
-    args: {
-        field: string;
-        records: QueryPlanNode;
-    };
-} | {
-    type: 'transaction';
-    args: QueryPlanNode;
-} | {
-    type: 'dataMap';
-    args: {
-        expr: QueryPlanNode;
-        structure: ResultNode;
-        enums: Record<string, Record<string, string>>;
-    };
-} | {
-    type: 'validate';
-    args: {
-        expr: QueryPlanNode;
-        rules: DataRule[];
-    } & ValidationError;
-} | {
-    type: 'if';
-    args: {
-        value: QueryPlanNode;
-        rule: DataRule;
-        then: QueryPlanNode;
-        else: QueryPlanNode;
-    };
-} | {
-    type: 'unit';
-} | {
-    type: 'diff';
-    args: {
-        from: QueryPlanNode;
-        to: QueryPlanNode;
-        fields: string[];
-    };
-} | {
-    type: 'initializeRecord';
-    args: {
-        expr: QueryPlanNode;
-        fields: Record<string, FieldInitializer>;
-    };
-} | {
-    type: 'mapRecord';
-    args: {
-        expr: QueryPlanNode;
-        fields: Record<string, FieldOperation>;
-    };
-} | {
-    type: 'process';
-    args: {
-        expr: QueryPlanNode;
-        operations: InMemoryOps;
-    };
-};
+/**
+ * A query plan as emitted by the query compiler: a tree of pure nodes that may
+ * contain impure nodes anywhere inside.
+ */
+declare type QueryPlanNode = ImpureQueryPlanNode | PureQueryPlanNode<ImpureQueryPlanNode>;
 
 export { raw }
 
@@ -2535,6 +2570,17 @@ declare class RequestHandler {
      */
     handleAndLogRequestError(params: HandleErrorParams): never;
     handleRequestError({ error, clientMethod, callsite, transaction, args, modelName, globalOmit, }: HandleErrorParams): never;
+    /**
+     * Builds the `meta` object for a `PrismaClientKnownRequestError`.
+     *
+     * P2002 errors carry the physical name of the table the violated constraint
+     * belongs to (`meta.table`, extracted by the driver adapters). It is mapped
+     * back to the Prisma model name so that `meta.modelName` points at the model
+     * where the violation actually occurred — which for nested writes is not
+     * necessarily the model of the top-level operation — and the internal
+     * `table` key is dropped from the user-facing meta.
+     */
+    private resolveErrorMeta;
     sanitizeMessage(message: any): any;
     unpack(data: unknown, dataPath: string[], unpacker?: Unpacker): any;
     get [Symbol.toStringTag](): string;
@@ -2619,7 +2665,7 @@ export declare type ResultArgs = {
     };
 };
 
-export declare type ResultArgsFieldCompute = (model: any) => unknown;
+export declare type ResultArgsFieldCompute = (model: any, modelName: string) => unknown;
 
 export declare type ResultFieldDefinition = {
     needs?: {
@@ -3220,7 +3266,18 @@ declare interface TraceState {
 declare interface TracingHelper {
     isEnabled(): boolean;
     getTraceParent(context?: Context): string;
-    dispatchEngineSpans(spans: EngineSpan[]): void;
+    /**
+     * Emits spans reported by a remote engine, together with the log events that
+     * were recorded while those spans were open.
+     *
+     * Implementations must call `emitLogEvent` exactly once for every entry in
+     * `events`, otherwise the client silently drops logs the user asked for. Each
+     * event should be emitted while the span identified by its `spanId` is the
+     * active one, so that handlers registered via `$on` observe the same context
+     * they would for a locally executed query. Events whose span is missing or
+     * not emitted must still be passed to `emitLogEvent`.
+     */
+    dispatchEngineSpans(spans: EngineSpan[], events: EngineTraceEvent[], emitLogEvent: (event: EngineTraceEvent) => void): void;
     getActiveContext(): Context | undefined;
     runInChildSpan<R>(nameOrOptions: string | ExtendedSpanOptions, callback: SpanCallback<R>): R;
 }

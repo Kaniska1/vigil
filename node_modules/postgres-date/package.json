@@ -1,7 +1,7 @@
 {
   "name": "postgres-date",
   "main": "index.js",
-  "version": "1.0.7",
+  "version": "2.1.0",
   "description": "Postgres date column parser",
   "license": "MIT",
   "repository": "bendrucker/postgres-date",
@@ -11,10 +11,10 @@
     "url": "bendrucker.me"
   },
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=12"
   },
   "scripts": {
-    "test": "standard && tape test.js"
+    "test": "standard && tape test.js && tsd"
   },
   "keywords": [
     "postgres",
@@ -23,11 +23,13 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "standard": "^14.0.0",
-    "tape": "^5.0.0"
+    "standard": "^16.0.0",
+    "tape": "^5.0.0",
+    "tsd": "^0.19.0"
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "readme.md"
   ]
 }

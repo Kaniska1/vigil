@@ -1,4 +1,4 @@
-# postgres-date [![Build Status](https://travis-ci.org/bendrucker/postgres-date.svg?branch=master)](https://travis-ci.org/bendrucker/postgres-date) [![Greenkeeper badge](https://badges.greenkeeper.io/bendrucker/postgres-date.svg)](https://greenkeeper.io/)
+# postgres-date [![tests](https://github.com/bendrucker/postgres-date/workflows/tests/badge.svg)](https://github.com/bendrucker/postgres-date/actions?query=workflow%3Atests)
 
 > Postgres date output parser
 
@@ -13,14 +13,13 @@ All prior versions of Postgres are likely compatible but not officially supporte
 ## Install
 
 ```
-$ npm install --save postgres-date
+npm install --save postgres-date
 ```
-
 
 ## Usage
 
 ```js
-var parse = require('postgres-date')
+const parse = require('postgres-date')
 parse('2011-01-23 22:15:51Z')
 // => 2011-01-23T22:15:51.000Z
 ```

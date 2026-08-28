@@ -12,8 +12,8 @@ dotenv.config();
 
 const app = express();
 
-const PORT =
-  process.env.PORT || 4000;
+const PORT = Number(process.env.PORT ?? 4000);
+
 
 app.use(
   cors({
@@ -62,11 +62,6 @@ app.use(
   metricsRoutes
 );
 
-app.listen(
-  PORT,
-  () => {
-    console.log(
-      `Vigil API running on http://localhost:${PORT}`
-    );
-  }
-);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Vigil API listening on port ${PORT}`);
+});

@@ -290,11 +290,11 @@ model ApiKey {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  lastUsedAt DateTime?
-  revokedAt  DateTime?
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
   encryptedKey  String?
-encryptionIv  String?
-encryptionTag String?
+  encryptionIv  String?
+  encryptionTag String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
