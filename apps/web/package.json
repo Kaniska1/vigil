@@ -23,6 +23,7 @@
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-icons": "^5.7.0",
     "react-markdown": "^10.1.0",
     "recharts": "^3.8.0",
     "remark-gfm": "^4.0.1",
@@ -42,7 +43,7 @@
     "typescript": "^5"
   },
   "optionalDependencies": {
-    "lightningcss-linux-x64-gnu": "1.32.0",
-    "@tailwindcss/oxide-linux-x64-gnu": "^4"
+    "@tailwindcss/oxide-linux-x64-gnu": "^4",
+    "lightningcss-linux-x64-gnu": "1.32.0"
   }
 }
