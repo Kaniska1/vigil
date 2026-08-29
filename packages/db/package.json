@@ -15,12 +15,12 @@
   },
 
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "generate": "prisma generate",
-    "migrate": "prisma migrate dev",
-    "studio": "prisma studio",
-    "validate": "prisma validate"
-  },
+  "build": "prisma generate && tsc -p tsconfig.json",
+  "generate": "prisma generate",
+  "migrate": "prisma migrate dev",
+  "studio": "prisma studio",
+  "validate": "prisma validate"
+},
 
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
