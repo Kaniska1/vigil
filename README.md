@@ -158,6 +158,42 @@ flowchart TB
 ```
 
 ---
+## Reproducible Testing
+
+### Option 1 — Test the deployed application
+
+1. Open the deployed Vigil web app.
+2. Sign in using Google or GitHub.
+3. Navigate to Agents.
+4. Open the Google Search Researcher to test the Google ADK integration.
+5. Provide a research query and start the run.
+6. Inspect the live execution events and persisted trace.
+7. Navigate to Runs to inspect execution status, latency, events, and results.
+8. Navigate to Orchestrations and submit a higher-level goal.
+9. Observe Vigil:
+   - plan required capabilities,
+   - resolve those capabilities against registered agents,
+   - execute the selected agents,
+   - observe their outputs,
+   - evaluate goal completion,
+   - replan if required.
+
+### Expected behavior
+
+Vigil should never rely on an LLM-generated agent identifier.
+
+The planner determines the capability required, while the deterministic runtime resolves that capability against agents actually present in the registry.
+
+The Google Search Researcher is executed using Google ADK.
+
+### Health check
+
+The deployed backend can be verified with:
+
+GET /health
+
+Expected result: a successful API health response.
+
 
 # Core Architecture Principles
 

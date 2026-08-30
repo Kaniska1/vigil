@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   Menu,
-  Play,
   X,
 } from "lucide-react";
 
@@ -34,6 +33,16 @@ const NAV_LINKS = [
 export function VigilHero() {
   const [mobileOpen, setMobileOpen] =
     useState(false);
+
+  function handleNavClick(link: (typeof NAV_LINKS)[number]) {
+    if (link.scroll) {
+      document.getElementById(link.href)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      setMobileOpen(false);
+    }
+  }
 
   return (
     <section
@@ -211,21 +220,38 @@ export function VigilHero() {
             lg:flex
           "
         >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="
-                text-[14px]
-                font-medium
-                text-white/50
-                transition-colors
-                hover:text-white
-              "
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) =>
+            link.scroll ? (
+              <button
+                key={link.label}
+                type="button"
+                onClick={() => handleNavClick(link)}
+                className="
+                  text-[14px]
+                  font-medium
+                  text-white/50
+                  transition-colors
+                  hover:text-white
+                "
+              >
+                {link.label}
+              </button>
+            ) : (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="
+                  text-[14px]
+                  font-medium
+                  text-white/50
+                  transition-colors
+                  hover:text-white
+                "
+              >
+                {link.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         {/* Right */}
@@ -308,16 +334,32 @@ export function VigilHero() {
               flex-col
             "
           >
-            {NAV_LINKS.map(
-              (link) => (
+            {NAV_LINKS.map((link) =>
+              link.scroll ? (
+                <button
+                  key={link.label}
+                  type="button"
+                  onClick={() => handleNavClick(link)}
+                  className="
+                    rounded-xl
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    font-medium
+                    text-white/55
+                    transition-colors
+                    hover:bg-white/[0.04]
+                    hover:text-white
+                  "
+                >
+                  {link.label}
+                </button>
+              ) : (
                 <Link
                   key={link.label}
                   href={link.href}
-                  onClick={() =>
-                    setMobileOpen(
-                      false,
-                    )
-                  }
+                  onClick={() => setMobileOpen(false)}
                   className="
                     rounded-xl
                     px-4

@@ -178,7 +178,7 @@ export function VigilContact() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <a
-              href="mailto:hello@vigil.dev"
+              href="mailto:kaniska.mitra@gmail.com"
               className="
                 flex
                 items-center

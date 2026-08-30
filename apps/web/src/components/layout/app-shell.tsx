@@ -3,7 +3,6 @@ import { Activity, Braces, Settings } from "lucide-react";
 import { auth } from "@/auth";
 import { UserMenu } from "@/components/auth/user-menu";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
@@ -21,15 +20,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-[10.5px] font-bold text-[var(--ink-2)] sm:flex">
-              <span className="size-1.5 rounded-full bg-[var(--primary-600)] shadow-[0_0_12px_rgba(51,153,255,.75)]" />
-              Runtime online
-            </div>
+
             <Link href="/runs" className="flex size-8 items-center justify-center rounded-[9px] border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--ink)]">
               <Activity className="size-3.5" />
-            </Link>
-            <Link href="/runs" className="flex size-8 items-center justify-center rounded-[9px] border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--ink)]">
-              <Settings className="size-3.5" />
             </Link>
             {session?.user ? <UserMenu user={session.user} /> : null}
           </div>
