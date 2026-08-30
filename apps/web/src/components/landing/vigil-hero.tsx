@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import {
   ArrowRight,
   Menu,
   X,
 } from "lucide-react";
-
-import { RiAiAgentLine } from "react-icons/ri";
 
 import LightRays from "@/components/LightRays";
 
@@ -170,45 +169,19 @@ export function VigilHero() {
         {/* Logo */}
 
         <Link
-          href="/"
-          className="
-            flex
-            items-center
-            gap-2.5
-          "
-        >
-          <div
-            className="
-              flex
-              size-9
-              items-center
-              justify-center
-              rounded-xl
-              border
-              border-white/[0.08]
-              bg-white/[0.035]
-              backdrop-blur-sm
-            "
-          >
-            <RiAiAgentLine
-              className="
-                size-[19px]
-                text-[#c394ff]
-              "
-            />
-          </div>
-
-          <span
-            className="
-              text-[18px]
-              font-semibold
-              tracking-[-0.035em]
-              text-white
-            "
-          >
-            Vigil
-          </span>
-        </Link>
+  href="/"
+  className="flex items-center"
+  aria-label="Vigil home"
+>
+  <Image
+    src="/logo.svg"
+    alt="Vigil"
+    width={118}
+    height={36}
+    priority
+    className="h-9 w-auto"
+  />
+</Link>
 
         {/* Desktop links */}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -67,55 +68,28 @@ export function AppSidebar() {
          * than exposing fake "New workspace" or duplicate
          * "Workspace settings" actions.
          */}
-        <div className="h-[58px] shrink-0 px-2 pt-2">
-          <div
-            className="
-              flex h-10 w-full items-center gap-2
-              rounded-[11px] px-2.5
-            "
-          >
-            <span
-              className="
-                flex size-7 shrink-0
-                items-center justify-center
-                rounded-[9px]
-                bg-gradient-to-br
-                from-[var(--primary-500)]
-                via-[var(--secondary-500)]
-                to-[var(--accent-500)]
-                text-white
-                shadow-[0_8px_24px_rgba(72,0,255,.25)]
-              "
-            >
-              <Radar className="size-3.5" />
-            </span>
-
-            <span className="min-w-0 flex-1">
-              <span
-                className="
-                  block truncate
-                  text-[13.5px]
-                  font-extrabold
-                  tracking-[-0.02em]
-                  text-[var(--ink)]
-                "
-              >
-                Vigil
-              </span>
-
-              <span
-                className="
-                  block truncate
-                  text-[10px]
-                  font-semibold
-                  text-[var(--ink-3)]
-                "
-              >
-                Developer workspace
-              </span>
-            </span>
-          </div>
-        </div>
+        <div className="h-[58px] shrink-0 px-3 pt-3">
+  <Link
+    href="/agents"
+    className="
+      flex
+      h-10
+      items-center
+      rounded-[10px]
+      px-1
+    "
+    aria-label="Vigil"
+  >
+    <Image
+      src="/logo.svg"
+      alt="Vigil"
+      width={112}
+      height={32}
+      priority
+      className="h-8 w-auto"
+    />
+  </Link>
+</div>
 
         {/* ─────────────────────────────────────────────
          * PRIMARY ACTION
