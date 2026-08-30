@@ -59,6 +59,10 @@
   --radius-2xl: calc(var(--radius) * 2);
 }
 
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
 :root[data-theme="light"] {
   --text-50: #f8f7fa;
   --text-100: #efedf2;
@@ -82,7 +86,7 @@
   --background-700: #574f5d;
   --background-800: #3b353f;
   --background-900: #251f29;
-  --background-950: #19171b;
+  --background-950: #0d0e0f;
 
   --primary-50: #edf4ff;
   --primary-100: #d9e8ff;
@@ -121,30 +125,45 @@
   --accent-950: #351255;
 }
 
-:root[data-theme="dark"] {
-  --text-50: #17131c;
-  --text-100: #211b28;
-  --text-200: #31293a;
-  --text-300: #463b50;
-  --text-400: #62566d;
-  --text-500: #82758e;
-  --text-600: #a298ac;
-  --text-700: #beb7c5;
-  --text-800: #d6d1dc;
-  --text-900: #eae7ee;
-  --text-950: #f8f6fa;
+/* =========================================================
+   DARK VIGIL THEME
+   Background: #0d0e0f
+   Accents:
+   #ab56ff
+   #7e72f4
+   #3879f8
+   ========================================================= */
 
-  --background-50: #19171b;
-  --background-100: #1e1b21;
-  --background-200: #242128;
-  --background-300: #2d2932;
-  --background-400: #393441;
-  --background-500: #4d4655;
-  --background-600: #665e70;
-  --background-700: #837b8d;
-  --background-800: #aaa4b0;
-  --background-900: #d2ced6;
-  --background-950: #f4f1f6;
+:root[data-theme="dark"] {
+  /* Text */
+
+  --text-50: #151617;
+  --text-100: #1d1f21;
+  --text-200: #2a2d30;
+  --text-300: #3d4145;
+  --text-400: #575c62;
+  --text-500: #747a81;
+  --text-600: #989ea5;
+  --text-700: #b8bdc3;
+  --text-800: #d2d6da;
+  --text-900: #e8eaec;
+  --text-950: #f7f8f9;
+
+  /* Dark neutral surface scale */
+
+  --background-50: #0d0e0f;
+  --background-100: #111214;
+  --background-200: #16181b;
+  --background-300: #1d2024;
+  --background-400: #292d32;
+  --background-500: #3a3f46;
+  --background-600: #545a62;
+  --background-700: #777e87;
+  --background-800: #a4aab1;
+  --background-900: #d0d4d8;
+  --background-950: #f1f3f5;
+
+  /* Primary blue */
 
   --primary-50: #07101f;
   --primary-100: #0b1b37;
@@ -158,6 +177,8 @@
   --primary-900: #c9ddff;
   --primary-950: #edf5ff;
 
+  /* Secondary periwinkle */
+
   --secondary-50: #0e0b23;
   --secondary-100: #17113c;
   --secondary-200: #281f68;
@@ -169,6 +190,8 @@
   --secondary-800: #c9c4fb;
   --secondary-900: #e0ddfd;
   --secondary-950: #f3f1ff;
+
+  /* Violet accent */
 
   --accent-50: #18091f;
   --accent-100: #270d35;
@@ -182,64 +205,83 @@
   --accent-900: #ead5ff;
   --accent-950: #f7edff;
 
-  --background: #19171b;
-  --foreground: #f8f6fa;
+  /* =======================================================
+     SHADCN TOKENS
+     ======================================================= */
 
-  --card: #1e1b21;
-  --card-foreground: #f8f6fa;
+  --background: #0d0e0f;
+  --foreground: #f7f8f9;
 
-  --popover: #211e24;
-  --popover-foreground: #f8f6fa;
+  --card: #121416;
+  --card-foreground: #f7f8f9;
+
+  --popover: #141619;
+  --popover-foreground: #f7f8f9;
 
   --primary: #3879f8;
   --primary-foreground: #ffffff;
 
-  --secondary: #242027;
-  --secondary-foreground: #eae7ee;
+  --secondary: #191b1f;
+  --secondary-foreground: #e8eaec;
 
-  --muted: #211e24;
-  --muted-foreground: #a298ac;
+  --muted: #15171a;
+  --muted-foreground: #989ea5;
 
   --accent: #ab56ff;
   --accent-foreground: #ffffff;
 
   --destructive: #ef4444;
 
-  --border: #302b35;
-  --input: #332d38;
+  --border: #24272c;
+  --input: #262a2f;
 
   --ring: #7e72f4;
 
-  --sidebar: #151317;
-  --sidebar-foreground: #eae7ee;
+  /* =======================================================
+     SIDEBAR
+     ======================================================= */
+
+  --sidebar: #0a0b0c;
+  --sidebar-foreground: #e8eaec;
 
   --sidebar-primary: #3879f8;
   --sidebar-primary-foreground: #ffffff;
 
-  --sidebar-accent: #242128;
-  --sidebar-accent-foreground: #f8f6fa;
+  --sidebar-accent: #16181b;
+  --sidebar-accent-foreground: #f7f8f9;
 
-  --sidebar-border: #2b2730;
+  --sidebar-border: #1d2024;
   --sidebar-ring: #7e72f4;
 
   --radius: 0.85rem;
 
-  --ink: #f8f6fa;
-  --ink-2: #c6bfcc;
-  --ink-3: #817688;
+  /* =======================================================
+     VIGIL APP TOKENS
+     ======================================================= */
 
-  --surface-sidebar: #151317;
-  --surface: #1d1a20;
-  --surface-raised: #232027;
+  --ink: #f7f8f9;
+  --ink-2: #c5c9ce;
+  --ink-3: #7d838a;
 
-  --field: #171519;
-  --inset: #141216;
+  --surface-sidebar: #0a0b0c;
 
-  --line: #2d2932;
-  --line-strong: #403948;
+  --surface: #111214;
 
-  --hover: #242128;
-  --hover-2: #2a2630;
+  --surface-raised: #16181b;
+
+  --field: #101113;
+
+  --inset: #0b0c0d;
+
+  --line: #22252a;
+
+  --line-strong: #33373e;
+
+  --hover: #181a1e;
+
+  --hover-2: #1e2126;
+
+  /* Brand tints */
 
   --blue-tint:
     color-mix(
@@ -271,6 +313,10 @@
     );
 }
 
+/* =========================================================
+   BASE
+   ========================================================= */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -278,7 +324,7 @@
 
   html {
     color-scheme: dark;
-    background: var(--background);
+    background: #0d0e0f;
   }
 
   body {
@@ -289,7 +335,7 @@
     background:
       radial-gradient(
         circle at 13% -8%,
-        rgba(171, 86, 255, 0.08),
+        rgba(171, 86, 255, 0.075),
         transparent 31%
       ),
       radial-gradient(
@@ -299,10 +345,10 @@
       ),
       radial-gradient(
         circle at 52% -15%,
-        rgba(126, 114, 244, 0.04),
+        rgba(126, 114, 244, 0.035),
         transparent 28%
       ),
-      #19171b;
+      #0d0e0f;
 
     background-attachment: fixed;
   }
@@ -320,42 +366,101 @@
   }
 }
 
+/* =========================================================
+   GLOBAL VIGIL UTILITIES
+   ========================================================= */
+
 @layer utilities {
   .vigil-panel {
     background:
       linear-gradient(
         180deg,
-        rgba(35, 32, 39, 0.98),
-        rgba(25, 23, 27, 0.98)
+        rgba(
+          22,
+          24,
+          27,
+          0.98
+        ),
+        rgba(
+          13,
+          14,
+          15,
+          0.98
+        )
       );
 
-    border: 1px solid var(--line);
+    border:
+      1px solid
+      var(--line);
 
     box-shadow:
-      0 24px 70px rgba(0, 0, 0, 0.34),
-      inset 0 1px 0 rgba(255, 255, 255, 0.025);
+      0 24px 70px
+        rgba(
+          0,
+          0,
+          0,
+          0.44
+        ),
+      inset 0 1px 0
+        rgba(
+          255,
+          255,
+          255,
+          0.025
+        );
   }
 
   .vigil-glow {
     box-shadow:
-      0 0 0 1px rgba(126, 114, 244, 0.18),
-      0 20px 60px rgba(171, 86, 255, 0.11),
-      0 28px 80px rgba(56, 121, 248, 0.07);
+      0 0 0 1px
+        rgba(
+          126,
+          114,
+          244,
+          0.18
+        ),
+      0 20px 60px
+        rgba(
+          171,
+          86,
+          255,
+          0.11
+        ),
+      0 28px 80px
+        rgba(
+          56,
+          121,
+          248,
+          0.07
+        );
   }
 
   .vigil-grid {
     background-image:
       linear-gradient(
-        rgba(171, 86, 255, 0.025) 1px,
+        rgba(
+          171,
+          86,
+          255,
+          0.022
+        )
+          1px,
         transparent 1px
       ),
       linear-gradient(
         90deg,
-        rgba(56, 121, 248, 0.025) 1px,
+        rgba(
+          56,
+          121,
+          248,
+          0.022
+        )
+          1px,
         transparent 1px
       );
 
-    background-size: 32px 32px;
+    background-size:
+      32px 32px;
 
     mask-image:
       linear-gradient(
@@ -369,15 +474,18 @@
     background:
       linear-gradient(
         100deg,
-        #f8f6fa 0%,
-        #e5dcf0 28%,
+        #f7f8f9 0%,
+        #e5e7eb 28%,
         #c493ff 52%,
         #9086f7 72%,
         #6b9dfb 100%
       );
 
-    -webkit-background-clip: text;
-    background-clip: text;
+    -webkit-background-clip:
+      text;
+
+    background-clip:
+      text;
 
     color: transparent;
   }
@@ -407,7 +515,8 @@
 
     padding: 1px;
 
-    border-radius: inherit;
+    border-radius:
+      inherit;
 
     background:
       linear-gradient(
@@ -418,13 +527,19 @@
       );
 
     -webkit-mask:
-      linear-gradient(#fff 0 0)
+      linear-gradient(
+        #fff 0 0
+      )
         content-box,
-      linear-gradient(#fff 0 0);
+      linear-gradient(
+        #fff 0 0
+      );
 
-    -webkit-mask-composite: xor;
+    -webkit-mask-composite:
+      xor;
 
-    mask-composite: exclude;
+    mask-composite:
+      exclude;
   }
 
   .vigil-brand-text {
@@ -440,6 +555,10 @@
   }
 }
 
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
 @supports selector(::-webkit-scrollbar) {
   ::-webkit-scrollbar {
     width: 9px;
@@ -447,31 +566,41 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #151317;
+    background: #0a0b0c;
   }
 
   ::-webkit-scrollbar-thumb {
-    border: 2px solid #151317;
+    border:
+      2px solid #0a0b0c;
 
-    border-radius: 999px;
+    border-radius:
+      999px;
 
-    background: #39323f;
+    background: #2a2d31;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #48404f;
+    background: #3a3e44;
   }
 }
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(7px);
+
+    transform:
+      translateY(7px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+
+    transform:
+      translateY(0);
   }
 }
 
@@ -488,27 +617,34 @@
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: scale(0.96);
+
+    transform:
+      scale(0.96);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
+
+    transform:
+      scale(1);
   }
 }
 
 @keyframes spin {
   to {
-    transform: rotate(360deg);
+    transform:
+      rotate(360deg);
   }
 }
 
 @keyframes shimmer-text {
   from {
-    background-position: 200% 0;
+    background-position:
+      200% 0;
   }
 
   to {
-    background-position: -200% 0;
+    background-position:
+      -200% 0;
   }
 }

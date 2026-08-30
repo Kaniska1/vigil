@@ -1,27 +1,54 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Mic, Network, Plus, Send, WandSparkles } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  ChevronDown,
+  FileText,
+  Loader2,
+  Mic,
+  Network,
+  Plus,
+  Send,
+  WandSparkles,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 const MODES = ["Vigil Planner", "Fast Planner"];
 
+import type {
+  OrchestratorAttachment,
+} from "@/lib/api";
+
 export function PromptBar({
   value,
   onChange,
   onSend,
+  attachments = [],
+  onFilesSelected,
+  onRemoveAttachment,
+  isProcessingFiles = false,
   disabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
+  attachments?: OrchestratorAttachment[];
+  onFilesSelected?: (files: File[]) => void;
+  onRemoveAttachment?: (index: number) => void;
+  isProcessingFiles?: boolean;
   disabled?: boolean;
 }) {
   const [modelOpen, setModelOpen] = useState(false);
   const [mode, setMode] = useState(MODES[0]);
   const [listening, setListening] = useState(false);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!listening) return;
@@ -49,6 +76,23 @@ export function PromptBar({
       ) : null}
 
       <div className="overflow-hidden rounded-[20px] border border-[var(--line-strong)] bg-[var(--surface)] shadow-[0_18px_55px_rgba(0,0,0,.35),inset_0_1px_0_rgba(255,255,255,.035)] transition-colors focus-within:border-[var(--secondary-600)]">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv"
+          className="hidden"
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+
+            if (files.length > 0) {
+              onFilesSelected?.(files);
+            }
+
+            event.target.value = "";
+          }}
+        />
+
         <Textarea
           ref={areaRef}
           value={value}
@@ -63,8 +107,53 @@ export function PromptBar({
           className="min-h-[108px] resize-none border-0 bg-transparent px-4 pt-4 pb-2 text-[14px] leading-6 shadow-none focus-visible:ring-0"
         />
 
+        {attachments.length > 0 || isProcessingFiles ? (
+          <div className="flex flex-wrap gap-2 px-3 pb-3">
+            {attachments.map((attachment, index) => (
+              <div
+                key={`${attachment.name}-${index}`}
+                className="flex items-center gap-2 rounded-[9px] border border-[var(--line)] bg-[var(--inset)] px-2.5 py-1.5"
+              >
+                <FileText className="size-3.5 text-[var(--secondary-700)]" />
+
+                <span className="max-w-[170px] truncate text-[10.5px] font-bold text-[var(--ink-2)]">
+                  {attachment.name}
+                </span>
+
+                <span className="font-mono text-[8px] uppercase text-[var(--ink-3)]">
+                  {attachment.kind}
+                </span>
+
+                <button
+                  type="button"
+                  aria-label={`Remove ${attachment.name}`}
+                  onClick={() => onRemoveAttachment?.(index)}
+                  className="text-[var(--ink-3)] transition-colors hover:text-[var(--ink)]"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+
+            {isProcessingFiles ? (
+              <div className="flex items-center gap-2 rounded-[9px] border border-[var(--line)] bg-[var(--inset)] px-2.5 py-1.5 text-[10.5px] font-bold text-[var(--ink-3)]">
+                <Loader2 className="size-3.5 animate-spin" />
+                Reading file…
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="flex items-center gap-1.5 border-t border-[var(--line)] px-2.5 py-2">
-          <Button type="button" variant="ghost" size="icon-xs" className="rounded-[9px] text-[var(--ink-3)] hover:text-[var(--ink)]">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            disabled={disabled || isProcessingFiles}
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-[9px] text-[var(--ink-3)] hover:text-[var(--ink)]"
+            aria-label="Attach PDF, DOCX or CSV"
+          >
             <Plus className="size-4" />
           </Button>
 

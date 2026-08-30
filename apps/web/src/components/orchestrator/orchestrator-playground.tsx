@@ -37,6 +37,7 @@ import { OrchestrationTabs } from "@/components/orchestrations/orchestration-tab
 import {
   createOrchestratorPlan,
   executeOrchestration,
+  extractOrchestratorFile,
   getOrchestration,
   getOrchestrationStreamUrl,
 } from "@/lib/api";
@@ -50,6 +51,7 @@ import type {
   OrchestrationEvent,
   OrchestrationEventType,
   OrchestrationStatus,
+  OrchestratorAttachment,
   OrchestratorPlan,
 } from "@/lib/api";
 
@@ -181,6 +183,19 @@ export function OrchestratorPlayground({
     goal,
     setGoal,
   ] = useState("");
+
+  const [
+    attachments,
+    setAttachments,
+  ] =
+    useState<
+      OrchestratorAttachment[]
+    >([]);
+
+  const [
+    isProcessingFiles,
+    setIsProcessingFiles,
+  ] = useState(false);
 
   const [
     contextEntries,
@@ -428,6 +443,75 @@ export function OrchestratorPlayground({
     orchestrationStatus,
   ]);
 
+  async function handleFilesSelected(
+    files: File[],
+  ) {
+    const remainingSlots =
+      Math.max(
+        0,
+        5 -
+          attachments.length,
+      );
+
+    const selected =
+      files.slice(
+        0,
+        remainingSlots,
+      );
+
+    if (
+      selected.length === 0
+    ) {
+      setError(
+        "Vigil supports up to 5 attachments per orchestration.",
+      );
+
+      return;
+    }
+
+    setIsProcessingFiles(
+      true,
+    );
+
+    setError(null);
+
+    try {
+      const extracted =
+        await Promise.all(
+          selected.map(
+            (
+              file,
+            ) =>
+              extractOrchestratorFile(
+                file,
+              ),
+          ),
+        );
+
+      setAttachments(
+        (
+          current,
+        ) => [
+          ...current,
+          ...extracted,
+        ],
+      );
+    } catch (
+      caughtError
+    ) {
+      setError(
+        caughtError instanceof
+          Error
+          ? caughtError.message
+          : "Failed to process attachment",
+      );
+    } finally {
+      setIsProcessingFiles(
+        false,
+      );
+    }
+  }
+
   async function handleCreatePlan() {
     if (
       !goal.trim()
@@ -499,6 +583,30 @@ export function OrchestratorPlayground({
           },
           {}
         );
+
+      if (
+        attachments.length > 0
+      ) {
+        context.attachments =
+          attachments.map(
+            (
+              attachment,
+            ) => ({
+              name:
+                attachment.name,
+              type:
+                attachment.type,
+              kind:
+                attachment.kind,
+              size:
+                attachment.size,
+              truncated:
+                attachment.truncated,
+              content:
+                attachment.text,
+            }),
+          );
+      }
 
       const developerSettings =
         loadDeveloperSettings();
@@ -773,6 +881,34 @@ export function OrchestratorPlayground({
               }
               onSend={
                 handleCreatePlan
+              }
+              attachments={
+                attachments
+              }
+              onFilesSelected={
+                handleFilesSelected
+              }
+              onRemoveAttachment={
+                (
+                  index,
+                ) => {
+                  setAttachments(
+                    (
+                      current,
+                    ) =>
+                      current.filter(
+                        (
+                          _,
+                          currentIndex,
+                        ) =>
+                          currentIndex !==
+                          index,
+                      ),
+                  );
+                }
+              }
+              isProcessingFiles={
+                isProcessingFiles
               }
               disabled={
                 isPlanning ||

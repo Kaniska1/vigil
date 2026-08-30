@@ -227,6 +227,23 @@ export type OrchestrationSettings = {
   maxReplans: number;
 };
 
+export type OrchestratorAttachment = {
+  name: string;
+
+  type: string;
+
+  size: number;
+
+  kind:
+    | "pdf"
+    | "docx"
+    | "csv";
+
+  text: string;
+
+  truncated: boolean;
+};
+
 export type CreateOrchestratorPlanInput = {
   goal: string;
 
@@ -622,4 +639,30 @@ export function getOrchestrationStreamUrl(
   return `/api/orchestrator/${encodeURIComponent(
     orchestrationId
   )}/stream`;
+}
+
+export async function extractOrchestratorFile(
+  file: File,
+): Promise<OrchestratorAttachment> {
+  const formData =
+    new FormData();
+
+  formData.append(
+    "file",
+    file,
+  );
+
+  const response =
+    await fetch(
+      "/api/orchestrator/extract-file",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+  return readResponse<OrchestratorAttachment>(
+    response,
+    "Failed to process attachment",
+  );
 }
