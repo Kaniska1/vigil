@@ -20,6 +20,32 @@ const RETRYABLE_STATUS_CODES =
     503,
   ]);
 
+/*
+ * Planning should fail fast because Vigil has a
+ * deterministic fallback.
+ *
+ * Agent execution can tolerate slightly more latency,
+ * but should never keep a run alive for several
+ * minutes.
+ */
+const LOW_LATENCY_ATTEMPT_TIMEOUT_MS =
+  8_000;
+
+const STANDARD_ATTEMPT_TIMEOUT_MS =
+  25_000;
+
+const LOW_LATENCY_TOTAL_TIMEOUT_MS =
+  15_000;
+
+const STANDARD_TOTAL_TIMEOUT_MS =
+  45_000;
+
+const LOW_LATENCY_MAX_RETRIES =
+  1;
+
+const STANDARD_MAX_RETRIES =
+  1;
+
 type GeminiGenerationOptions = {
   lowLatency?: boolean;
 };
@@ -34,6 +60,46 @@ function sleep(
         milliseconds
       )
   );
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string
+): Promise<T> {
+  let timer:
+    | ReturnType<typeof setTimeout>
+    | undefined;
+
+  const timeoutPromise =
+    new Promise<never>(
+      (_, reject) => {
+        timer =
+          setTimeout(
+            () => {
+              reject(
+                new Error(
+                  message
+                )
+              );
+            },
+            timeoutMs
+          );
+      }
+    );
+
+  try {
+    return await Promise.race([
+      promise,
+      timeoutPromise,
+    ]);
+  } finally {
+    if (timer) {
+      clearTimeout(
+        timer
+      );
+    }
+  }
 }
 
 export function getGeminiErrorStatus(
@@ -84,16 +150,13 @@ function getErrorMessage(
 }
 
 /*
- * A 429 can mean two very different things:
+ * A 429 can mean two different things:
  *
- * 1. Temporary rate limiting
- *    -> retrying can help.
+ * 1. Temporary throttling
+ *    -> retrying may help.
  *
- * 2. A hard project/model quota has been exhausted
- *    -> retrying immediately is useless.
- *
- * Gemini includes quota metadata in the error
- * message, so we detect the second case explicitly.
+ * 2. Hard project/model quota exhaustion
+ *    -> retrying immediately is pointless.
  */
 export function isGeminiQuotaExhausted(
   error: unknown
@@ -104,18 +167,18 @@ export function isGeminiQuotaExhausted(
     ).toLowerCase();
 
   return (
-  message.includes(
-    "quota exceeded"
-  ) ||
-  message.includes(
-    "exceeded your current quota"
-  ) ||
-  message.includes(
-    "current quota"
-  ) ||
-  message.includes(
-    "resource_exhausted"
-  ) ||
+    message.includes(
+      "quota exceeded"
+    ) ||
+    message.includes(
+      "exceeded your current quota"
+    ) ||
+    message.includes(
+      "current quota"
+    ) ||
+    message.includes(
+      "resource_exhausted"
+    ) ||
     message.includes(
       "free_tier_requests"
     ) ||
@@ -129,12 +192,9 @@ export function isGeminiQuotaExhausted(
 }
 
 /*
- * Used by the orchestrator to decide whether
- * deterministic planning is an acceptable
- * resilience fallback.
- *
- * This intentionally covers provider/infrastructure
- * failures only.
+ * Availability failures may safely trigger
+ * deterministic planning fallback or bounded job
+ * retries.
  */
 export function isGeminiAvailabilityError(
   error: unknown
@@ -211,51 +271,108 @@ export class GeminiProvider
     options:
       GeminiGenerationOptions = {}
   ): Promise<LLMResponse> {
+    const lowLatency =
+      options.lowLatency ===
+      true;
+
     /*
-     * `maxRetries` means additional attempts
-     * after the first request.
+     * maxRetries means retries AFTER the first
+     * attempt.
      *
-     * Planning is latency-sensitive, so it gets
-     * only one retry.
+     * Both modes currently allow one retry only.
      */
     const maxRetries =
-      options.lowLatency
-        ? 1
-        : 3;
+      lowLatency
+        ? LOW_LATENCY_MAX_RETRIES
+        : STANDARD_MAX_RETRIES;
+
+    const attemptTimeoutMs =
+      lowLatency
+        ? LOW_LATENCY_ATTEMPT_TIMEOUT_MS
+        : STANDARD_ATTEMPT_TIMEOUT_MS;
+
+    const totalTimeoutMs =
+      lowLatency
+        ? LOW_LATENCY_TOTAL_TIMEOUT_MS
+        : STANDARD_TOTAL_TIMEOUT_MS;
+
+    const overallStartedAt =
+      Date.now();
 
     let retryCount =
       0;
 
     while (true) {
+      const elapsed =
+        Date.now() -
+        overallStartedAt;
+
+      const remainingTotalTime =
+        totalTimeoutMs -
+        elapsed;
+
+      if (
+        remainingTotalTime <=
+        0
+      ) {
+        throw new Error(
+          lowLatency
+            ? "GEMINI_LOW_LATENCY_TOTAL_TIMEOUT"
+            : "GEMINI_TOTAL_TIMEOUT"
+        );
+      }
+
+      /*
+       * Never allow an individual attempt to exceed
+       * the remaining total request budget.
+       */
+      const effectiveAttemptTimeout =
+        Math.min(
+          attemptTimeoutMs,
+          remainingTotalTime
+        );
+
+      const attemptNumber =
+        retryCount +
+        1;
+
       const startedAt =
         Date.now();
 
       try {
         const response =
-          await this.client.models.generateContent({
-            model:
-              MODEL,
+          await withTimeout(
+            this.client.models.generateContent({
+              model:
+                MODEL,
 
-            contents:
-              request.prompt,
+              contents:
+                request.prompt,
 
-            config: {
-              systemInstruction:
-                request.systemPrompt,
+              config: {
+                systemInstruction:
+                  request.systemPrompt,
 
-              ...(options.lowLatency
-                ? {
-                    thinkingConfig: {
-                      thinkingLevel:
-                        ThinkingLevel.MINIMAL,
-                    },
+                ...(lowLatency
+                  ? {
+                      thinkingConfig: {
+                        thinkingLevel:
+                          ThinkingLevel.MINIMAL,
+                      },
 
-                    maxOutputTokens:
-                      800,
-                  }
-                : {}),
-            },
-          });
+                      maxOutputTokens:
+                        800,
+                    }
+                  : {}),
+              },
+            }),
+
+            effectiveAttemptTimeout,
+
+            lowLatency
+              ? "GEMINI_LOW_LATENCY_ATTEMPT_TIMEOUT"
+              : "GEMINI_ATTEMPT_TIMEOUT"
+          );
 
         const usage =
           response.usageMetadata;
@@ -263,9 +380,9 @@ export class GeminiProvider
         console.log(
           `[Gemini] Request completed in ${
             Date.now() -
-            startedAt
-          }ms${
-            options.lowLatency
+            overallStartedAt
+          }ms after ${attemptNumber} attempt(s)${
+            lowLatency
               ? " [low-latency]"
               : ""
           }`
@@ -307,18 +424,33 @@ export class GeminiProvider
             error
           );
 
+        const availabilityError =
+          isGeminiAvailabilityError(
+            error
+          );
+
+        /*
+         * Status-based failures such as 429/503 are
+         * retryable.
+         *
+         * Local timeout/network failures are also
+         * considered retryable availability failures.
+         */
         const retryable =
-          status !==
-            undefined &&
-          RETRYABLE_STATUS_CODES.has(
-            status
+          (
+            (
+              status !==
+              undefined &&
+              RETRYABLE_STATUS_CODES.has(
+                status
+              )
+            ) ||
+            availabilityError
           ) &&
           !quotaExhausted;
 
         console.warn(
-          `[Gemini] Request attempt ${
-            retryCount + 1
-          } failed after ${
+          `[Gemini] Request attempt ${attemptNumber} failed after ${
             Date.now() -
             startedAt
           }ms`,
@@ -326,13 +458,20 @@ export class GeminiProvider
             status,
             retryable,
             quotaExhausted,
+            lowLatency,
+            totalElapsedMs:
+              Date.now() -
+              overallStartedAt,
+            error:
+              getErrorMessage(
+                error
+              ),
           }
         );
 
         /*
-         * Do not burn another Gemini request when
-         * the project/model quota is already known
-         * to be exhausted.
+         * Hard quota exhaustion cannot be fixed by an
+         * immediate retry.
          */
         if (
           quotaExhausted
@@ -347,16 +486,58 @@ export class GeminiProvider
         if (
           !retryable ||
           retryCount >=
-            maxRetries
+          maxRetries
         ) {
           throw error;
         }
 
-        const delay =
+        const elapsedAfterFailure =
+          Date.now() -
+          overallStartedAt;
+
+        const remainingAfterFailure =
+          totalTimeoutMs -
+          elapsedAfterFailure;
+
+        if (
+          remainingAfterFailure <=
+          0
+        ) {
+          throw new Error(
+            lowLatency
+              ? "GEMINI_LOW_LATENCY_TOTAL_TIMEOUT"
+              : "GEMINI_TOTAL_TIMEOUT"
+          );
+        }
+
+        /*
+         * Exponential backoff with small jitter.
+         */
+        const baseDelay =
           1000 *
           Math.pow(
             2,
             retryCount
+          );
+
+        const jitter =
+          Math.floor(
+            Math.random() *
+            250
+          );
+
+        const requestedDelay =
+          baseDelay +
+          jitter;
+
+        /*
+         * Never sleep beyond the remaining total
+         * request budget.
+         */
+        const delay =
+          Math.min(
+            requestedDelay,
+            remainingAfterFailure
           );
 
         retryCount++;

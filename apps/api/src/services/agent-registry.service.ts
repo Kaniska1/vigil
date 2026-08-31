@@ -23,30 +23,36 @@ export async function discoverAgents(
     search,
   } = filters;
 
-  const where: Prisma.AgentWhereInput = {
-    isActive: true,
-  };
+  const where:
+    Prisma.AgentWhereInput = {
+      isActive:
+        true,
+    };
 
   if (capability) {
     where.capabilities = {
-      has: capability,
+      has:
+        capability,
     };
   }
 
   if (tool) {
     where.tools = {
-      has: tool,
+      has:
+        tool,
     };
   }
 
   if (permission) {
     where.permissions = {
-      has: permission,
+      has:
+        permission,
     };
   }
 
   if (category) {
-    where.category = category;
+    where.category =
+      category;
   }
 
   if (search) {
@@ -59,7 +65,9 @@ export async function discoverAgents(
           name: {
             contains:
               normalizedSearch,
-            mode: "insensitive",
+
+            mode:
+              "insensitive",
           },
         },
 
@@ -67,7 +75,9 @@ export async function discoverAgents(
           slug: {
             contains:
               normalizedSearch,
-            mode: "insensitive",
+
+            mode:
+              "insensitive",
           },
         },
 
@@ -75,20 +85,65 @@ export async function discoverAgents(
           description: {
             contains:
               normalizedSearch,
-            mode: "insensitive",
+
+            mode:
+              "insensitive",
           },
         },
       ];
     }
   }
 
-  return prisma.agent.findMany({
-    where,
+  /*
+   * --------------------------------------------------
+   * Discovery diagnostics
+   * --------------------------------------------------
+   *
+   * The orchestrator resolves capabilities through
+   * this DB-backed registry.
+   *
+   * Logging the requested capability makes stale
+   * registry metadata immediately visible.
+   */
+  if (capability) {
+    console.log(
+      `[Agent Discovery] Looking for capability: ${capability}`
+    );
+  }
 
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const agents =
+    await prisma.agent.findMany({
+      where,
+
+      orderBy: {
+        createdAt:
+          "desc",
+      },
+    });
+
+  /*
+   * Only expose useful discovery metadata here.
+   *
+   * Do not dump complete agent rows or schemas into
+   * normal logs.
+   */
+  console.log(
+    `[Agent Discovery] Found ${agents.length} matching agent(s)`,
+    agents.map(
+      (agent) => ({
+        slug:
+          agent.slug,
+
+        version:
+          agent.version,
+
+        capabilities:
+          agent.capabilities,
+      })
+    )
+  );
+
+  return agents;
 }
 
 export async function findAgentBySlug(
@@ -97,7 +152,9 @@ export async function findAgentBySlug(
   return prisma.agent.findFirst({
     where: {
       slug,
-      isActive: true,
+
+      isActive:
+        true,
     },
   });
 }
@@ -106,14 +163,16 @@ export async function findAgentsByCapabilities(
   capabilities: string[]
 ) {
   if (
-    capabilities.length === 0
+    capabilities.length ===
+    0
   ) {
     return [];
   }
 
   return prisma.agent.findMany({
     where: {
-      isActive: true,
+      isActive:
+        true,
 
       capabilities: {
         hasSome:
@@ -122,7 +181,8 @@ export async function findAgentsByCapabilities(
     },
 
     orderBy: {
-      createdAt: "desc",
+      createdAt:
+        "desc",
     },
   });
 }
@@ -131,18 +191,22 @@ export async function findAgentsWithAllCapabilities(
   capabilities: string[]
 ) {
   if (
-    capabilities.length === 0
+    capabilities.length ===
+    0
   ) {
     return [];
   }
 
   return prisma.agent.findMany({
     where: {
-      isActive: true,
+      isActive:
+        true,
 
       AND:
         capabilities.map(
-          (capability) => ({
+          (
+            capability
+          ) => ({
             capabilities: {
               has:
                 capability,
@@ -152,7 +216,8 @@ export async function findAgentsWithAllCapabilities(
     },
 
     orderBy: {
-      createdAt: "desc",
+      createdAt:
+        "desc",
     },
   });
 }

@@ -577,17 +577,17 @@ export function ApiSdkClient() {
           </CardTitle>
 
           <CardDescription>
-            This is the target developer experience for the upcoming @vigil/sdk package.
+            This is the target developer experience for the upcoming @kaniska1/vigil-sdk package.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           <pre className="overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--field)] p-4 text-xs leading-6 text-[var(--ink-2)]">
-            <code>{`npm install @vigil/sdk`}</code>
+            <code>{`npm install @kaniska1/vigil-sdk`}</code>
           </pre>
 
           <pre className="overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--field)] p-4 text-xs leading-6 text-[var(--ink-2)]">
-            <code>{`import { Vigil } from "@vigil/sdk";
+            <code>{`import { Vigil } from "@kaniska1/vigil-sdk";
 
 const vigil = new Vigil({
   apiKey: process.env.VIGIL_API_KEY!,

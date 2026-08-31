@@ -1,4 +1,4 @@
-import { Vigil } from "@vigil/sdk";
+import { Vigil } from "@kaniska1/vigil-sdk";
 
 const vigil = new Vigil({
   apiKey: process.env.VIGIL_API_KEY,
